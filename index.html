@@ -34,11 +34,24 @@
 </style>
 
 <div class="wrap">
-  <div>
-    <h1>1-on-1 Video</h1>
-    <div class="sub">WebRTC over a signaling server. Both of you join the same room code to connect.</div>
+  <div class="row" style="justify-content:space-between;align-items:flex-start">
+    <div>
+      <h1>1-on-1 Video</h1>
+      <div class="sub">WebRTC over a signaling server. Both of you join the same room code to connect.</div>
+    </div>
+    <div id="account" class="row" style="display:none;gap:8px">
+      <span class="sub" id="who" style="margin:0"></span>
+      <button id="logout" class="ghost">Sign out</button>
+    </div>
   </div>
 
+  <div id="gate" class="panel" style="display:none">
+    <h1 style="margin:0 0 8px">Sign in to continue</h1>
+    <div class="sub">Anonymous stranger video chat. Sign in with Google to confirm you're a real person before matching.</div>
+    <div class="row" style="margin-top:12px"><button id="login">Sign in with Google</button></div>
+  </div>
+
+  <div id="app" style="display:none;gap:16px">
   <div class="videos">
     <div class="vid"><video id="local" autoplay playsinline muted></video><span class="tag">You</span></div>
     <div class="vid"><video id="remote" autoplay playsinline></video><span class="tag">Them</span></div>
@@ -65,16 +78,42 @@
       <li>Video connects automatically once the second person joins.</li>
     </ol>
   </div>
+  </div>
 </div>
 
+<script src="/vendor/supabase.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 // All ICE/STUN config lives here — drop a TURN server into iceServers later.
 const cfg = { iceServers:[{ urls:"stun:stun.l.google.com:19302" }] };
 let pc, localStream, socket, room, pendingCandidates = [];
+let sb, session;
 
 function setStatus(text, cls){ $("status").textContent = text; $("dot").className = "dot" + (cls?(" "+cls):""); }
+
+// --- Auth: show the app only when signed in ---
+async function initAuth(){
+  const c = await fetch("/config").then(r => r.json());
+  sb = supabase.createClient(c.url, c.anonKey);
+  session = (await sb.auth.getSession()).data.session;
+  renderAuth();
+  sb.auth.onAuthStateChange((_e, s) => { session = s; renderAuth(); });
+}
+function renderAuth(){
+  const authed = !!session;
+  $("gate").style.display = authed ? "none" : "block";
+  $("app").style.display = authed ? "grid" : "none";
+  $("account").style.display = authed ? "flex" : "none";
+  if(authed) $("who").textContent = session.user.email;
+}
+$("login").onclick = () =>
+  sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: window.location.origin } });
+$("logout").onclick = async () => {
+  if(socket){ socket.disconnect(); socket = null; }
+  await sb.auth.signOut();
+};
+initAuth();
 
 function newPeer(){
   pc = new RTCPeerConnection(cfg);
@@ -113,8 +152,13 @@ $("join").onclick = () => {
   $("join").disabled=true; $("room").disabled=true; $("leave").disabled=false;
   setStatus("Waiting for someone to join room \""+room+"\"…","warn");
 
-  socket = io();
+  socket = io({ auth: { token: session.access_token } });
   socket.emit("join", room);
+
+  socket.on("connect_error", () => {
+    setStatus("Sign-in expired — please sign in again","err");
+    $("join").disabled=false; $("room").disabled=false; $("leave").disabled=true;
+  });
 
   socket.on("full", () => setStatus("Room is full — try another code","err"));
 

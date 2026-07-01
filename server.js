@@ -1,12 +1,36 @@
+require("dotenv").config();
 const express = require("express");
+const path = require("path");
 const http = require("http");
 const { Server } = require("socket.io");
+const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 const app = express();
+
+// Hand the frontend its public Supabase values (anon key is safe to expose).
+app.get("/config", (req, res) => {
+  res.json({ url: process.env.SUPABASE_URL, anonKey: process.env.SUPABASE_ANON_KEY });
+});
+
+// Serve the Supabase client bundle from our own origin (no external CDN).
+app.use("/vendor", express.static(path.join(__dirname, "node_modules/@supabase/supabase-js/dist/umd")));
+
 app.use(express.static(__dirname));
 
 const server = http.createServer(app);
 const io = new Server(server);
+
+// Gate every socket: the handshake must carry a valid Supabase access token.
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth && socket.handshake.auth.token;
+  if (!token) return next(new Error("unauthorized"));
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) return next(new Error("unauthorized"));
+  socket.data.user = data.user;
+  next();
+});
 
 io.on("connection", (socket) => {
   socket.on("join", (room) => {

@@ -55,6 +55,7 @@
       <input id="room" placeholder="e.g. cats-42" autocomplete="off"
         style="flex:1;min-width:160px;background:#0c0f22;border:1px solid var(--line);border-radius:8px;color:var(--ink);font:14px var(--mono);padding:9px">
       <button id="join" disabled>Join</button>
+      <button id="leave" class="ghost" disabled>Leave</button>
     </div>
 
     <label style="margin-top:16px">How to connect</label>
@@ -109,7 +110,7 @@ $("start").onclick = async () => {
 $("join").onclick = () => {
   room = $("room").value.trim();
   if(!room){ setStatus("Enter a room code first","err"); return; }
-  $("join").disabled=true; $("room").disabled=true;
+  $("join").disabled=true; $("room").disabled=true; $("leave").disabled=false;
   setStatus("Waiting for someone to join room \""+room+"\"…","warn");
 
   socket = io();
@@ -144,6 +145,21 @@ $("join").onclick = () => {
     else pendingCandidates.push(c);
   });
 
-  socket.on("peer-left", () => setStatus("The other person left","err"));
+  socket.on("peer-left", () => {
+    if(pc){ pc.close(); pc = null; }
+    pendingCandidates = [];
+    $("remote").srcObject = null;
+    setStatus("The other person left — waiting for someone…","warn");
+  });
+};
+
+// End the call, leave the room, and return to room-entry (camera stays on).
+$("leave").onclick = () => {
+  if(socket){ socket.disconnect(); socket = null; }   // notifies the other peer
+  if(pc){ pc.close(); pc = null; }
+  pendingCandidates = [];
+  $("remote").srcObject = null;
+  $("leave").disabled=true; $("join").disabled=false; $("room").disabled=false;
+  setStatus("Left room — enter a code","warn");
 };
 </script>

@@ -1,0 +1,14 @@
+services:
+  omegle2:
+    build: .
+    restart: unless-stopped
+    ports:
+      # host 3001 -> container 3000 (host :3000 is taken by Forgejo)
+      - "3001:3000"
+    healthcheck:
+      # busybox wget (bundled in node:alpine) fetches the served page
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

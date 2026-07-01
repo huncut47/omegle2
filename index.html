@@ -1,0 +1,149 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1-on-1 Video — WebRTC demo</title>
+<style>
+  :root{
+    --bg:#0f1226; --panel:#191d3a; --line:#2b2f52;
+    --ink:#e8e9f5; --dim:#9aa0c8; --amber:#ffb648; --green:#4ade80; --red:#f87171;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:20px}
+  h1{font-size:18px;margin:0 0 2px}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:16px}
+  .wrap{max-width:820px;margin:0 auto;display:grid;gap:16px}
+  .videos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .vid{position:relative;background:#000;border:1px solid var(--line);border-radius:12px;overflow:hidden;aspect-ratio:4/3}
+  .vid video{width:100%;height:100%;object-fit:cover;display:block}
+  .tag{position:absolute;left:8px;bottom:8px;background:#0009;padding:2px 8px;border-radius:20px;font-size:12px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  button{background:var(--amber);color:#221a00;border:0;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;font-size:14px}
+  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  label{display:block;font-size:12px;color:var(--dim);margin:12px 0 4px}
+  textarea{width:100%;height:70px;background:#0c0f22;border:1px solid var(--line);border-radius:8px;color:var(--ink);
+    font:12px/1.4 var(--mono);padding:8px;resize:vertical}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:20px;border:1px solid var(--line)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+  .dot.on{background:var(--green)} .dot.warn{background:var(--amber)} .dot.err{background:var(--red)}
+  .steps{color:var(--dim);font-size:13px;margin:0;padding-left:18px}
+  .steps b{color:var(--ink)}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>1-on-1 Video</h1>
+    <div class="sub">WebRTC over a signaling server. Both of you join the same room code to connect.</div>
+  </div>
+
+  <div class="videos">
+    <div class="vid"><video id="local" autoplay playsinline muted></video><span class="tag">You</span></div>
+    <div class="vid"><video id="remote" autoplay playsinline></video><span class="tag">Them</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <span class="pill"><span id="dot" class="dot"></span><span id="status">Not started</span></span>
+      <button id="start">Start camera</button>
+    </div>
+
+    <label>Room code — both people enter the same one</label>
+    <div class="row">
+      <input id="room" placeholder="e.g. cats-42" autocomplete="off"
+        style="flex:1;min-width:160px;background:#0c0f22;border:1px solid var(--line);border-radius:8px;color:var(--ink);font:14px var(--mono);padding:9px">
+      <button id="join" disabled>Join</button>
+    </div>
+
+    <label style="margin-top:16px">How to connect</label>
+    <ol class="steps">
+      <li><b>Both:</b> click Start camera.</li>
+      <li><b>Both:</b> type the same room code and click Join.</li>
+      <li>Video connects automatically once the second person joins.</li>
+    </ol>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+// All ICE/STUN config lives here — drop a TURN server into iceServers later.
+const cfg = { iceServers:[{ urls:"stun:stun.l.google.com:19302" }] };
+let pc, localStream, socket, room, pendingCandidates = [];
+
+function setStatus(text, cls){ $("status").textContent = text; $("dot").className = "dot" + (cls?(" "+cls):""); }
+
+function newPeer(){
+  pc = new RTCPeerConnection(cfg);
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  pc.ontrack = e => { $("remote").srcObject = e.streams[0]; };
+  // Trickle ICE: send each candidate as it's discovered.
+  pc.onicecandidate = e => { if(e.candidate) socket.emit("candidate", e.candidate); };
+  pc.onconnectionstatechange = () => {
+    const s = pc.connectionState;
+    if(s==="connected") setStatus("Connected","on");
+    else if(s==="connecting") setStatus("Connecting…","warn");
+    else if(s==="failed"||s==="disconnected") setStatus("Connection "+s,"err");
+  };
+}
+
+// Candidates can arrive before the remote description is set — buffer until it is.
+async function flushCandidates(){
+  for(const c of pendingCandidates) await pc.addIceCandidate(c);
+  pendingCandidates = [];
+}
+
+$("start").onclick = async () => {
+  try{
+    localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+  }catch(err){
+    setStatus("Camera blocked: "+err.name,"err"); return;
+  }
+  $("local").srcObject = localStream;
+  setStatus("Camera on — enter a room code","warn");
+  $("start").disabled=true; $("join").disabled=false;
+};
+
+$("join").onclick = () => {
+  room = $("room").value.trim();
+  if(!room){ setStatus("Enter a room code first","err"); return; }
+  $("join").disabled=true; $("room").disabled=true;
+  setStatus("Waiting for someone to join room \""+room+"\"…","warn");
+
+  socket = io();
+  socket.emit("join", room);
+
+  socket.on("full", () => setStatus("Room is full — try another code","err"));
+
+  // Both peers build their connection; the initiator sends the first offer.
+  socket.on("start", async ({ initiator }) => {
+    newPeer();
+    setStatus("Connecting…","warn");
+    if(initiator){
+      await pc.setLocalDescription(await pc.createOffer());
+      socket.emit("offer", pc.localDescription);
+    }
+  });
+
+  socket.on("offer", async offer => {
+    await pc.setRemoteDescription(offer);
+    await flushCandidates();
+    await pc.setLocalDescription(await pc.createAnswer());
+    socket.emit("answer", pc.localDescription);
+  });
+
+  socket.on("answer", async answer => {
+    await pc.setRemoteDescription(answer);
+    await flushCandidates();
+  });
+
+  socket.on("candidate", async c => {
+    if(pc && pc.remoteDescription) await pc.addIceCandidate(c);
+    else pendingCandidates.push(c);
+  });
+
+  socket.on("peer-left", () => setStatus("The other person left","err"));
+};
+</script>

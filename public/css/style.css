@@ -1,0 +1,796 @@
+/* ═══════════════════════════════════════════════════════════════════
+   style.css — Omegle 2  |  Premium Dark UI System
+   ─────────────────────────────────────────────────────────────────
+   1.  Design Tokens
+   2.  Base Reset
+   3.  Auth Gate
+   4.  App Layout
+   5.  Header
+   6.  Video Grid
+   7.  Controls Dashboard
+   8.  Buttons
+   9.  Status Dot & Pill
+   10. Keyframe Animations
+   11. Responsive
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Design Tokens ──────────────────────────────────────────────── */
+:root {
+  /* ── Palette ── */
+  --bg:         #07090f;   /* deepest background          */
+  --surface-0:  #0c0f1a;   /* page canvas                 */
+  --surface-1:  #10141f;   /* base cards                  */
+  --surface-2:  #161b2c;   /* elevated panels             */
+  --surface-3:  #1d2338;   /* inputs, pills               */
+  --surface-4:  #252c42;   /* hovered surfaces            */
+
+  --border:       #252c44;
+  --border-soft:  #1e2438;
+  --border-hover: #374060;
+  --border-glow:  rgba(91, 110, 245, 0.45);
+
+  /* ── Text ── */
+  --text-1: #eef0fa;   /* headings, primary          */
+  --text-2: #9aa3cc;   /* body, secondary            */
+  --text-3: #56617e;   /* captions, placeholders     */
+  --text-4: #363d5a;   /* ultra-muted                */
+
+  /* ── Brand accent (indigo) ── */
+  --indigo:       #5c6ff5;
+  --indigo-light: #7b8cf7;
+  --indigo-dim:   rgba(92, 111, 245, 0.14);
+  --indigo-glow:  rgba(92, 111, 245, 0.38);
+
+  /* ── Semantic colors ── */
+  --green:        #10b981;
+  --green-dim:    rgba(16, 185, 129, 0.14);
+  --green-glow:   rgba(16, 185, 129, 0.35);
+
+  --amber:        #f59e0b;
+  --amber-dim:    rgba(245, 158, 11, 0.14);
+  --amber-glow:   rgba(245, 158, 11, 0.32);
+
+  --red:          #ef4444;
+  --red-dim:      rgba(239, 68, 68, 0.14);
+  --red-glow:     rgba(239, 68, 68, 0.30);
+
+  /* ── Typography ── */
+  --font:  'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* ── Radius ── */
+  --r-xs:   5px;
+  --r-sm:   8px;
+  --r-md:  12px;
+  --r-lg:  16px;
+  --r-xl:  20px;
+  --r-2xl: 24px;
+  --r-pill: 9999px;
+
+  /* ── Elevation shadows ── */
+  --shadow-sm:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 1px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md:
+    0 4px 12px rgba(0, 0, 0, 0.55),
+    0 2px 4px  rgba(0, 0, 0, 0.35);
+  --shadow-lg:
+    0 12px 40px rgba(0, 0, 0, 0.65),
+    0  4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-inset:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  /* ── Motion ── */
+  --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-std:  cubic-bezier(0.4, 0, 0.2, 1);
+  --t-xs:  100ms var(--ease-std);
+  --t-sm:  180ms var(--ease-std);
+  --t-md:  260ms var(--ease-std);
+  --t-lg:  400ms var(--ease-out);
+}
+
+/* ── 2. Base Reset ─────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  tab-size: 2;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-1);
+  background: var(--bg);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Ambient gradient — gives depth without distraction */
+  background-image:
+    radial-gradient(ellipse 70% 50% at 10% 30%,
+      rgba(92, 111, 245, 0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 90% 10%,
+      rgba(16, 185, 129, 0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 60% at 50% 100%,
+      rgba(92, 111, 245, 0.04) 0%, transparent 60%);
+}
+
+/* ── 3. Auth Gate ──────────────────────────────────────────────────── */
+
+/* Full-screen overlay — JS sets display:'block' to show */
+#gate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg);
+  background-image: inherit; /* share body ambient gradient */
+  /* centered layout achieved with inner card absolute positioning */
+}
+
+/* Glass-morphic centered card */
+.gate-card {
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: min(440px, calc(100vw - 36px));
+  padding: 48px 40px 40px;
+  text-align: center;
+
+  background: var(--surface-2);
+  border-radius: var(--r-2xl);
+  box-shadow: var(--shadow-lg), var(--shadow-inset);
+
+  /* Gradient border via outline trick */
+  outline: 1px solid var(--border);
+}
+
+/* Glowing top edge on the card */
+.gate-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--r-2xl) + 1px);
+  background: linear-gradient(
+    145deg,
+    rgba(92, 111, 245, 0.55) 0%,
+    transparent  42%,
+    rgba(16, 185, 129, 0.25) 100%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Logo mark in gate */
+.gate-brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  margin-bottom: 28px;
+}
+
+/* Anonymous person icon */
+.gate-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 20px;
+  background: var(--indigo-dim);
+  border: 1px solid rgba(92, 111, 245, 0.25);
+  border-radius: var(--r-xl);
+  color: var(--indigo-light);
+}
+
+.gate-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.3px;
+  margin-bottom: 10px;
+}
+
+.gate-sub {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.65;
+  margin-bottom: 32px;
+  max-width: 320px;
+  margin-inline: auto;
+}
+
+.gate-legal {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 20px;
+  line-height: 1.55;
+}
+
+/* Google sign-in button */
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 20px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+  background: #ffffff;
+  border: none;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  transition:
+    background var(--t-sm),
+    box-shadow  var(--t-sm),
+    transform   var(--t-sm);
+}
+
+.btn-google:hover {
+  background: #f4f6ff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-google:active {
+  transform: scale(0.98) translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ── 4. App Layout ─────────────────────────────────────────────────── */
+
+/*
+  JS sets #app to display:'grid' when the user is authenticated.
+  We define the grid geometry here so it activates automatically.
+*/
+#app {
+  /* display: grid — set by main.js */
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  min-height: 100dvh;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 18px 28px;
+}
+
+/* ── 5. Header ─────────────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm), var(--shadow-inset);
+}
+
+.header-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Video camera icon next to brand name */
+.brand-logo {
+  display: flex;
+  align-items: center;
+  margin-right: 2px;
+  color: var(--indigo-light);
+  transform: translateY(2px); /* optical alignment */
+}
+
+.brand-wordmark {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text-1);
+}
+
+.brand-accent {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--indigo-light);
+}
+
+.brand-tagline {
+  font-size: 13px;
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+@media (max-width: 480px) {
+  .brand-tagline { display: none; }
+}
+
+/* Account area (JS toggles display:'flex' when authed) */
+.header-account {
+  /* display: flex set by JS */
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.account-email {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-3);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 540px) {
+  .account-email { display: none; }
+}
+
+/* ── 6. Video Grid ─────────────────────────────────────────────────── */
+.video-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  min-height: 0; /* allow shrink inside 1fr row */
+}
+
+/* Individual video tile */
+.vid-card {
+  position: relative;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  transition:
+    border-color var(--t-md),
+    box-shadow   var(--t-md);
+}
+
+/* Glow border when a stream is active (remote card when connected) */
+.vid-card:has(video:not([src=""])) {
+  border-color: var(--border-hover);
+}
+
+/* Actual <video> element fills the tile */
+.vid-card video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+
+/* ── Camera-off local overlay ──
+   Shown as a simple dark tile until JS sets srcObject.
+   We can't detect srcObject via CSS, so we show it always and
+   rely on the video element itself to cover it once streaming. */
+.vid-pre-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--surface-1);
+  color: var(--text-4);
+  pointer-events: none;
+  /* Hidden once video is playing — the video covers this overlay */
+}
+
+.vid-pre-overlay span {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* ── Remote placeholder overlay ──
+   JS toggles display:'flex' / 'none' */
+.vid-placeholder {
+  /* display: flex  — set by main.js setState() */
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--surface-1);
+  transition: opacity var(--t-md);
+}
+
+/* Pulsing icon ring — visual cue when searching */
+.placeholder-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+}
+
+/* Triggered by main.js adding class 'is-searching' via setState */
+.vid-placeholder.is-searching .placeholder-icon {
+  animation: icon-pulse 2s ease-in-out infinite;
+  border-color: rgba(92, 111, 245, 0.3);
+  color: var(--indigo-light);
+}
+
+.placeholder-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-3);
+  letter-spacing: 0.01em;
+}
+
+/* Video tile label badge */
+.vid-label {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 3;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 3px 10px 4px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── 7. Controls Dashboard ─────────────────────────────────────────── */
+.controls-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm), var(--shadow-inset);
+  flex-wrap: wrap;
+}
+
+.status-section {
+  flex-shrink: 0;
+}
+
+/* Status pill container */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+}
+
+/* Status label text */
+.status-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Button row on the right */
+.btn-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── 8. Buttons ────────────────────────────────────────────────────── */
+
+/* Base */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  outline-offset: 3px;
+  transition:
+    color        var(--t-sm),
+    background   var(--t-sm),
+    border-color var(--t-sm),
+    box-shadow   var(--t-sm),
+    transform    var(--t-sm),
+    opacity      var(--t-sm);
+}
+
+.btn svg {
+  flex-shrink: 0;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--indigo);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Primary  — Indigo (Find Stranger) ── */
+.btn-primary {
+  background: var(--indigo);
+  color: #fff;
+  border-color: var(--indigo);
+  box-shadow: 0 2px 10px rgba(92, 111, 245, 0.30);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--indigo-light);
+  border-color: var(--indigo-light);
+  box-shadow:
+    0 0 0 4px var(--indigo-dim),
+    0 4px 18px var(--indigo-glow);
+  transform: translateY(-2px);
+}
+
+/* ── Warning  — Amber (Next / Skip) ── */
+.btn-warning {
+  background: var(--amber-dim);
+  color: var(--amber);
+  border-color: rgba(245, 158, 11, 0.30);
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.20);
+  border-color: var(--amber);
+  box-shadow:
+    0 0 0 3px rgba(245, 158, 11, 0.10),
+    0 4px 14px var(--amber-glow);
+  transform: translateY(-2px);
+}
+
+/* ── Danger   — Red (Stop) ── */
+.btn-danger {
+  background: var(--red-dim);
+  color: var(--red);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.20);
+  border-color: var(--red);
+  box-shadow:
+    0 0 0 3px rgba(239, 68, 68, 0.10),
+    0 4px 14px var(--red-glow);
+  transform: translateY(-2px);
+}
+
+/* ── Secondary — Surface (Start camera) ── */
+.btn-secondary {
+  background: var(--surface-3);
+  color: var(--text-1);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-4);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+}
+
+/* ── Ghost — Minimal (Sign out) ── */
+.btn-ghost {
+  background: transparent;
+  color: var(--text-3);
+  border-color: var(--border);
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: var(--border-hover);
+  color: var(--text-2);
+}
+
+/* ── 9. Status Dot ─────────────────────────────────────────────────── */
+
+/* The dot element — JS sets class: 'dot' | 'dot on' | 'dot warn' | 'dot err' */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-4);
+  transition:
+    background  var(--t-md),
+    box-shadow  var(--t-md);
+}
+
+/* Connected — solid green with subtle halo */
+.dot.on {
+  background: var(--green);
+  box-shadow:
+    0 0 0 3px var(--green-dim),
+    0 0 10px var(--green-glow);
+}
+
+/* Searching / Connecting — animated amber pulse */
+.dot.warn {
+  background: var(--amber);
+  animation: dot-pulse 1.8s ease-in-out infinite;
+}
+
+/* Error — red */
+.dot.err {
+  background: var(--red);
+  box-shadow: 0 0 0 3px var(--red-dim);
+}
+
+/* ── 10. Keyframe Animations ───────────────────────────────────────── */
+
+/* Pulsing ring on the status dot when searching */
+@keyframes dot-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0   rgba(245, 158, 11, 0.65),
+      0 0 8px   rgba(245, 158, 11, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 7px rgba(245, 158, 11, 0),
+      0 0 0     rgba(245, 158, 11, 0);
+  }
+}
+
+/* Pulsing icon in remote placeholder when searching */
+@keyframes icon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(92, 111, 245, 0.4);
+    background: var(--surface-3);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(92, 111, 245, 0);
+    background: rgba(92, 111, 245, 0.08);
+  }
+}
+
+/* Smooth fade-up entry for cards */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Page-in animation for the app shell */
+#app > * {
+  animation: fade-up var(--t-lg) var(--ease-out) both;
+}
+
+#app > *:nth-child(1) { animation-delay:  0ms; }
+#app > *:nth-child(2) { animation-delay: 60ms; }
+#app > *:nth-child(3) { animation-delay: 120ms; }
+
+/* ── 11. Responsive ────────────────────────────────────────────────── */
+
+/* Tablet — tighter padding */
+@media (max-width: 768px) {
+  #app {
+    padding: 14px 14px 24px;
+    gap: 14px;
+  }
+
+  .app-header {
+    padding: 12px 16px;
+  }
+
+  .controls-card {
+    padding: 12px 16px;
+  }
+
+  .gate-card {
+    padding: 40px 28px 32px;
+  }
+}
+
+/* Mobile — stack videos vertically */
+@media (max-width: 580px) {
+  .video-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .controls-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .status-section {
+    text-align: center;
+  }
+
+  .status-pill {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .status-text {
+    max-width: unset;
+  }
+
+  .btn-row {
+    justify-content: center;
+  }
+
+  .gate-card {
+    padding: 36px 22px 28px;
+  }
+}
+
+/* Very small — even tighter */
+@media (max-width: 380px) {
+  .btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .btn-row {
+    gap: 8px;
+  }
+}

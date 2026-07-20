@@ -16,20 +16,33 @@
  */
 
 window.ProfileUI = (() => {
-  // ── Activity pills catalogue ───────────────────────────────
-  const ACTIVITIES = [
-    { id: 'gaming',      label: 'Gaming',      emoji: '🎮' },
-    { id: 'fitness',     label: 'Fitness',     emoji: '💪' },
-    { id: 'movies',      label: 'Movies',      emoji: '🎬' },
-    { id: 'anime',       label: 'Anime',       emoji: '⛩️' },
-    { id: 'tech',        label: 'Tech',        emoji: '💻' },
-    { id: 'travel',      label: 'Travel',      emoji: '✈️' },
-    { id: 'music',       label: 'Music',       emoji: '🎵' },
-    { id: 'art',         label: 'Art',         emoji: '🎨' },
-    { id: 'cooking',     label: 'Cooking',     emoji: '🍳' },
-    { id: 'sports',      label: 'Sports',      emoji: '⚽' },
-    { id: 'books',       label: 'Books',       emoji: '📚' },
-    { id: 'photography', label: 'Photography', emoji: '📸' },
+  // ── Interests catalogue ────────────────────────────────
+  const INTERESTS_MAX = 10;
+  const CATEGORIES = [
+    {
+      name: 'Music & Nightlife',
+      items: ['Hip Hop', 'Pop', 'Techno', 'Rock', 'Reggaeton', 'Heavy Metal', 'EDM', 'House', 'Jazz', 'Indie', 'R&B', 'K-Pop', 'Country', 'Classical', 'Punk', 'Lo-Fi', 'Afrobeat', 'Drum & Bass', 'Dubstep', 'Acoustic']
+    },
+    {
+      name: 'Gaming & Esports',
+      items: ['PC Gaming', 'PlayStation', 'Xbox', 'Nintendo', 'FPS', 'RPGs', 'MMOs', 'League of Legends', 'CS2', 'Valorant', 'Minecraft', 'Roblox', 'Souls-like', 'Fighting Games', 'Battle Royale', 'Cozy Games', 'Retro', 'Twitch', 'Esports', 'VR']
+    },
+    {
+      name: 'Entertainment',
+      items: ['Anime', 'Manga', 'Horror Movies', 'Sci-Fi', 'K-Dramas', 'True Crime', 'Stand-up', 'Marvel/DC', 'Binge-Watching', 'Podcasts', 'Reality TV', 'Fantasy', 'Thrillers', 'Cartoons', 'Documentaries', 'Indie Films', 'Theater', 'Vlogging', 'YouTube', 'TikTok']
+    },
+    {
+      name: 'Sports & Active',
+      items: ['Gym & Fitness', 'Football', 'Basketball', 'Tennis', 'Martial Arts', 'Skateboarding', 'Hiking', 'Yoga', 'Running', 'Swimming', 'Volleyball', 'Baseball', 'Golf', 'Cycling', 'Snowboarding', 'Surfing', 'Climbing', 'CrossFit', 'Boxing', 'Rugby']
+    },
+    {
+      name: 'Hobbies & Creativity',
+      items: ['Photography', 'Digital Art', 'Writing', 'Coding', 'Fashion', 'Content Creation', 'Instruments', 'Painting', 'Reading', 'Thrift Shopping', 'Cosplay', 'Board Games', 'Astrology', 'Cars/Tuning', 'Gardening', 'DIY/Crafts', 'Make-up', 'Crypto', 'Woodworking', 'Investing']
+    },
+    {
+      name: 'Food & Vibe',
+      items: ['Coffee', 'Ramen', 'Korean BBQ', 'Street Food', 'Vegan', 'Craft Beer', 'Boba', 'Baking', 'Sushi', 'Pizza', 'Fast Food', 'Fine Dining', 'Cocktails', 'Wine Tasting', 'Spicy Food', 'Seafood', 'Mexican', 'Italian', 'Desserts', 'Tea']
+    }
   ];
 
   // ── Private state ─────────────────────────────────────────
@@ -112,24 +125,63 @@ window.ProfileUI = (() => {
   // ── Rendering ─────────────────────────────────────────────
 
   /**
-   * Build and inject the activity pills grid into the modal.
-   * Separated from the static HTML to keep the catalogue editable here.
+   * Build and inject the accordion categories into the modal.
    */
   function _render() {
-    const grid = $('activity-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    ACTIVITIES.forEach(({ id, label, emoji }) => {
-      const btn = document.createElement('button');
-      btn.type        = 'button';
-      btn.id          = `activity-${id}`;
-      btn.className   = 'activity-pill';
-      btn.dataset.id  = id;
-      btn.innerHTML   = `<span class="pill-emoji">${emoji}</span><span class="pill-label">${label}</span>`;
-      btn.addEventListener('click', () => _toggleActivity(id, btn));
-      grid.appendChild(btn);
+    const accContainer = $('accordion-container');
+    if (!accContainer) return;
+    accContainer.innerHTML = '';
+    
+    CATEGORIES.forEach((cat) => {
+      const item = document.createElement('div');
+      item.className = 'accordion-item';
+      
+      const header = document.createElement('button');
+      header.className = 'accordion-header';
+      header.type = 'button';
+      header.innerHTML = `<span>${cat.name}</span>
+        <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>`;
+      
+      const body = document.createElement('div');
+      body.className = 'accordion-body';
+      
+      const inner = document.createElement('div');
+      inner.className = 'accordion-body-inner';
+      
+      cat.items.forEach(interest => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'activity-pill';
+        btn.dataset.id = interest;
+        btn.textContent = interest;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          _toggleInterest(interest);
+        });
+        inner.appendChild(btn);
+      });
+      
+      body.appendChild(inner);
+      item.appendChild(header);
+      item.appendChild(body);
+      
+      header.addEventListener('click', () => {
+        const isOpen = item.classList.contains('is-open');
+        if (isOpen) {
+          item.classList.remove('is-open');
+          body.style.maxHeight = null;
+        } else {
+          item.classList.add('is-open');
+          body.style.maxHeight = body.scrollHeight + 'px';
+        }
+      });
+      
+      accContainer.appendChild(item);
     });
+    
+    _syncSelectedInterests();
   }
 
   /**
@@ -154,13 +206,14 @@ window.ProfileUI = (() => {
       _setAvatarPreview(p.profile_picture);
     }
 
-    // Activities
+    // Interests
     if (Array.isArray(p.activities)) {
       p.activities.forEach(id => {
-        _selectedActivities.add(id);
-        const btn = $(`activity-${id}`);
-        if (btn) btn.classList.add('active');
+        if (_selectedActivities.size < INTERESTS_MAX) {
+          _selectedActivities.add(id);
+        }
       });
+      _syncSelectedInterests();
     }
 
     // Top songs — parse JSONB objects from Supabase and render track rows
@@ -461,15 +514,53 @@ window.ProfileUI = (() => {
     });
   }
 
-  // ── Activity pills ────────────────────────────────────────
-
-  function _toggleActivity(id, btn) {
+  /**
+   * Toggle an interest on or off. Enforces INTERESTS_MAX.
+   */
+  function _toggleInterest(id) {
     if (_selectedActivities.has(id)) {
       _selectedActivities.delete(id);
-      btn.classList.remove('active');
     } else {
+      if (_selectedActivities.size >= INTERESTS_MAX) return; // limit reached
       _selectedActivities.add(id);
-      btn.classList.add('active');
+    }
+    _syncSelectedInterests();
+  }
+
+  /**
+   * Syncs the visual state of the accordions and the pinned zone.
+   */
+  function _syncSelectedInterests() {
+    // Sync button states in the accordion
+    document.querySelectorAll('.activity-pill').forEach(btn => {
+      if (btn.closest('.accordion-body')) {
+        const id = btn.dataset.id;
+        if (_selectedActivities.has(id)) {
+          btn.classList.add('is-selected');
+        } else {
+          btn.classList.remove('is-selected');
+        }
+      }
+    });
+
+    // Render pinned zone
+    const zone = $('selected-interests-zone');
+    const countEl = $('interests-count');
+    if (zone && countEl) {
+      zone.innerHTML = '';
+      countEl.textContent = `${_selectedActivities.size}/${INTERESTS_MAX} Selected`;
+      
+      _selectedActivities.forEach(id => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'activity-pill is-selected';
+        btn.innerHTML = `${id}<span class="pill-x">×</span>`;
+        btn.addEventListener('click', () => {
+          _selectedActivities.delete(id);
+          _syncSelectedInterests();
+        });
+        zone.appendChild(btn);
+      });
     }
   }
 

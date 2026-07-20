@@ -400,21 +400,6 @@ if (editProfileBtn) {
 
 // ── Partner Profile UI ────────────────────────────────────────────────────
 
-const ACTIVITIES_MAP = {
-  gaming: { label: 'Gaming', emoji: '🎮' },
-  fitness: { label: 'Fitness', emoji: '💪' },
-  movies: { label: 'Movies', emoji: '🎬' },
-  anime: { label: 'Anime', emoji: '⛩️' },
-  tech: { label: 'Tech', emoji: '💻' },
-  travel: { label: 'Travel', emoji: '✈️' },
-  music: { label: 'Music', emoji: '🎵' },
-  art: { label: 'Art', emoji: '🎨' },
-  cooking: { label: 'Cooking', emoji: '🍳' },
-  sports: { label: 'Sports', emoji: '⚽' },
-  books: { label: 'Books', emoji: '📚' },
-  photography: { label: 'Photography', emoji: '📸' }
-};
-
 function renderPartnerProfile(p) {
   if (!p) p = {};
   
@@ -446,19 +431,34 @@ function renderPartnerProfile(p) {
     }
   }
 
-  // Activities
+  // Interests
   const grid = $('partner-activities');
   if (grid) {
     grid.innerHTML = '';
-    if (Array.isArray(p.activities)) {
-      p.activities.forEach(id => {
-        const act = ACTIVITIES_MAP[id];
-        if (!act) return;
-        const btn = document.createElement('div');
-        btn.className = 'activity-pill active';
-        btn.innerHTML = `<span class="pill-emoji">${act.emoji}</span><span class="pill-label">${act.label}</span>`;
-        grid.appendChild(btn);
+    
+    // Get local user's selected interests for matching
+    const localProfile = typeof Profile !== 'undefined' ? (Profile.get() || {}) : {};
+    const localInterests = Array.isArray(localProfile.activities) ? localProfile.activities : [];
+
+    if (Array.isArray(p.activities) && p.activities.length > 0) {
+      p.activities.forEach(interestName => {
+        if (!interestName) return;
+        const isShared = localInterests.includes(interestName);
+        
+        const pill = document.createElement('div');
+        pill.className = 'stranger-interest-pill';
+        if (isShared) pill.classList.add('shared-interest');
+        pill.textContent = interestName;
+        
+        grid.appendChild(pill);
       });
+    } else {
+      // Empty state
+      const emptyText = document.createElement('div');
+      emptyText.style.fontSize = '12px';
+      emptyText.style.color = 'var(--text-4)';
+      emptyText.textContent = 'No interests specified';
+      grid.appendChild(emptyText);
     }
   }
 

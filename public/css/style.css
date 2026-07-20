@@ -949,7 +949,7 @@ body {
 .gr-profile {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 /* ── Footer ── */
@@ -1052,6 +1052,83 @@ body {
 .prof-field--full {
   grid-column: 1 / -1;
   margin-bottom: 24px;
+}
+
+/* ── Pinned Selection Zone ── */
+.selected-interests-zone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin-bottom: 16px;
+}
+.selected-interests-zone:empty {
+  display: none;
+}
+
+/* ── Accordion System ── */
+.accordion-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accordion-item {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background var(--t-sm), color var(--t-sm);
+}
+
+.accordion-header:hover {
+  background: var(--surface-3);
+  color: var(--text-1);
+}
+
+.accordion-chevron {
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.accordion-item.is-open .accordion-chevron {
+  transform: rotate(180deg);
+}
+
+.accordion-item.is-open .accordion-header {
+  background: var(--surface-3);
+  color: var(--text-1);
+}
+
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.accordion-body-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid var(--border-soft);
 }
 
 /* ── Section wrapper (activities, songs) ── */
@@ -1680,6 +1757,32 @@ body {
 
 .partner-song-list .song-row-remove {
   display: none !important;
+}
+
+/* Stranger Interests Tags */
+.stranger-interests-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.stranger-interest-pill {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ccc;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.stranger-interest-pill.shared-interest {
+  background: rgba(92, 111, 245, 0.25);
+  border: 1px solid rgba(92, 111, 245, 0.8);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(92, 111, 245, 0.4);
 }
 
 /* ── 11. Responsive ────────────────────────────────────────────────── */

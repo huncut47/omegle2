@@ -145,10 +145,10 @@
           </div>
         </div>
 
-        <!-- Activities Grid -->
-        <div class="partner-section">
+        <!-- Interests -->
+        <div class="partner-section" id="partner-activities-wrapper">
           <div class="partner-section-title">Interests</div>
-          <div id="partner-activities" class="activity-grid partner-activity-grid"></div>
+          <div id="partner-activities" class="stranger-interests-tags"></div>
         </div>
 
         <!-- Top Songs -->
@@ -260,6 +260,34 @@
               <select id="mic-select" class="prof-input prof-select"></select>
             </div>
           </div>
+          
+          <!-- Top Songs -->
+          <div class="prof-section" style="margin-top: 24px;">
+            <label class="prof-label" for="song-tag-input">
+              Top 5 Songs <span class="prof-label-hint">(optional — search &amp; select)</span>
+            </label>
+            <div class="song-search-wrap">
+              <div id="song-tag-box" class="song-tag-box">
+                <svg class="song-search-icon" width="14" height="14" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input id="song-tag-input" class="song-tag-input"
+                       type="text" placeholder="Search for a song…"
+                       maxlength="80" autocomplete="off"
+                       aria-autocomplete="list" aria-controls="song-dropdown">
+              </div>
+              <div id="song-dropdown" class="song-dropdown"
+                   role="listbox" aria-label="Song search results"
+                   style="display:none"></div>
+            </div>
+            <div id="song-selected-list" class="song-selected-list"
+                 role="list" aria-label="Selected songs"></div>
+            <p class="song-tag-counter">
+              <span id="song-tag-count">0</span> / 5 songs added
+            </p>
+          </div>
         </div>
 
         <!-- Profile Setup (Right Column) -->
@@ -321,37 +349,18 @@
 
           <!-- Interests -->
           <div class="prof-section">
-            <label class="prof-label">Interests <span class="prof-label-hint">(pick your favourites)</span></label>
-            <div id="activity-grid" class="activity-grid" role="group" aria-label="Interests"></div>
+            <div class="prof-label-flex" style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+              <label class="prof-label" style="margin-bottom: 0;">Interests</label>
+              <span id="interests-count" class="prof-label-hint">0/10 Selected</span>
+            </div>
+            
+            <!-- Pinned selection zone -->
+            <div id="selected-interests-zone" class="selected-interests-zone" aria-live="polite"></div>
+            
+            <!-- Accordion container -->
+            <div id="accordion-container" class="accordion-container" role="group" aria-label="Interest Categories"></div>
           </div>
 
-          <!-- Top Songs -->
-          <div class="prof-section">
-            <label class="prof-label" for="song-tag-input">
-              Top 5 Songs <span class="prof-label-hint">(optional — search &amp; select)</span>
-            </label>
-            <div class="song-search-wrap">
-              <div id="song-tag-box" class="song-tag-box">
-                <svg class="song-search-icon" width="14" height="14" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2.2"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input id="song-tag-input" class="song-tag-input"
-                       type="text" placeholder="Search for a song…"
-                       maxlength="80" autocomplete="off"
-                       aria-autocomplete="list" aria-controls="song-dropdown">
-              </div>
-              <div id="song-dropdown" class="song-dropdown"
-                   role="listbox" aria-label="Song search results"
-                   style="display:none"></div>
-            </div>
-            <div id="song-selected-list" class="song-selected-list"
-                 role="list" aria-label="Selected songs"></div>
-            <p class="song-tag-counter">
-              <span id="song-tag-count">0</span> / 5 songs added
-            </p>
-          </div>
 
         </div> <!-- /.gr-profile -->
       </div> <!-- /.gr-body -->

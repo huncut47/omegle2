@@ -39,8 +39,8 @@ let localStream = null;   // MediaStream from getUserMedia
 // ── State machine ─────────────────────────────────────────────────────────
 
 /**
- * The four UI states the app can be in.
- * @typedef {'camera-off'|'idle'|'searching'|'connected'} AppState
+ * The UI states the app can be in.
+ * @typedef {'camera-off'|'lobby'|'idle'|'searching'|'connected'|'stopped'} AppState
  */
 
 /** @type {AppState} */
@@ -61,14 +61,16 @@ function setState(state, statusText, statusCls) {
   // ── Status pill ──────────────────────────────────────────────────────
   if (statusText !== undefined) setStatus(statusText, statusCls ?? null);
 
-  // ── Camera button ────────────────────────────────────────────────────
-  // Only enabled before camera has been started.
-  $('start').style.display = (state === 'camera-off') ? '' : 'none';
-
-  // ── Find Stranger button ─────────────────────────────────────────────
-  // Visible (and enabled) only when idle and camera is on.
-  $('find').style.display  = (state === 'idle')      ? '' : 'none';
-  $('find').disabled       = false;
+  // ── Camera & Find buttons ────────────────────────────────────────────
+  if ($('start')) $('start').style.display = 'none'; // Obsolete, camera auto-starts
+  if ($('find')) {
+    $('find').style.display = (state === 'idle' || state === 'stopped') ? '' : 'none';
+    // Ensure button is fully interactive
+    $('find').disabled = false;
+    $('find').classList.remove('disabled');
+    $('find').style.opacity = '1';
+    $('find').style.pointerEvents = 'auto';
+  }
 
   // ── Next / Skip button ───────────────────────────────────────────────
   // Visible only when in an active call.
@@ -133,44 +135,126 @@ function renderAuth(session) {
 
   if (authed) {
     $('who').textContent = session.user.email;
-    connectSocket(session);       // opens socket if not already open
-    _checkProfile(session);       // ensure profile is complete before matching
+    connectSocket(session);
+    
+    // Only enter the lobby on initial login, not on every auth state refresh
+    if (appState === 'camera-off') {
+      enterLobby(session);
+    }
   } else {
-    disconnectSocket();           // closes socket and resets state
+    disconnectSocket();
     setState('camera-off', 'Not started');
   }
 }
 
 /**
- * Load the user's profile and open the setup modal only if the profile
- * is not yet complete (i.e. first-time users or incomplete returning users).
- * Returning users with a full profile bypass the modal entirely.
- * @param {object} session
+ * Initialize the Green Room Lobby.
+ * Fetches the user profile, requests camera, and populates device dropdowns.
  */
-async function _checkProfile(session) {
+async function enterLobby(session) {
+  setState('lobby'); // Prevents re-entry and hides dashboard buttons
+  
   try {
     Profile.init(Auth.getClient());
     const profile = await Profile.load(session.user.id);
-
-    if (!Profile.isComplete(profile)) {
-      // First-time user or incomplete profile — show onboarding modal
-      ProfileUI.open(session, profile, _onProfileSaved);
-    }
-    // else: profile is complete — silently cached, no modal
-
+    ProfileUI.open(session, profile, _onLobbySubmit);
   } catch (err) {
-    console.error('[main] _checkProfile threw:', err);
-    ProfileUI.open(session, null, _onProfileSaved);
+    console.error('[main] enterLobby profile load threw:', err);
+    ProfileUI.open(session, null, _onLobbySubmit);
+  }
+
+  // Auto-start camera in the lobby
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    _applyLocalStream();
+
+    // Enumerate hardware devices for the dropdowns
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const camSelect = $('camera-select');
+    const micSelect = $('mic-select');
+    if (camSelect && micSelect) {
+      camSelect.innerHTML = '';
+      micSelect.innerHTML = '';
+      devices.forEach(d => {
+        if (d.kind === 'videoinput') {
+          const opt = document.createElement('option');
+          opt.value = d.deviceId;
+          opt.text = d.label || `Camera ${camSelect.length + 1}`;
+          camSelect.appendChild(opt);
+        } else if (d.kind === 'audioinput') {
+          const opt = document.createElement('option');
+          opt.value = d.deviceId;
+          opt.text = d.label || `Microphone ${micSelect.length + 1}`;
+          micSelect.appendChild(opt);
+        }
+      });
+
+      // Switch device listener
+      const switchDevice = async () => {
+        if (localStream) localStream.getTracks().forEach(t => t.stop());
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: camSelect.value } },
+          audio: { deviceId: { exact: micSelect.value } }
+        });
+        _applyLocalStream();
+      };
+      camSelect.onchange = switchDevice;
+      micSelect.onchange = switchDevice;
+    }
+  } catch (err) {
+    console.error('[main] Camera blocked in lobby:', err);
+    setStatus('Camera blocked: ' + err.name, 'err');
   }
 }
 
 /**
- * Called by ProfileUI after a successful profile save.
- * @param {object} savedProfile
+ * Apply the current localStream to all relevant video elements.
  */
-function _onProfileSaved(savedProfile) {
-  // Nothing extra to do — the app is already rendered, profile is cached in Profile.get()
-  console.log('[main] Profile saved:', savedProfile?.age, savedProfile?.gender);
+function _applyLocalStream() {
+  const bg = $('green-room-bg');
+  const preview = $('green-room-preview');
+  const localVideo = $('local');
+  if (bg) bg.srcObject = localStream;
+  if (preview) preview.srcObject = localStream;
+  if (localVideo) {
+    localVideo.srcObject = localStream;
+    localVideo.onloadedmetadata = () => {
+      if (localVideo.videoWidth && localVideo.videoHeight) {
+        const ratio = localVideo.videoWidth / localVideo.videoHeight;
+        const card = $('local-card');
+        if (card) card.style.aspectRatio = ratio.toString();
+      }
+    };
+  }
+  const overlay = $('local-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+/**
+ * Queue up for a new stranger. Shared by the Green Room Lobby and the bottom control bar.
+ * @param {object} [profileDataOverride] - Optional profile data to use instead of the cached one
+ * @param {string} [statusText='Entering queue…'] - Optional status text to show
+ */
+function queueForStranger(profileDataOverride, statusText = 'Entering queue…') {
+  if (!socket || !socket.connected) return;
+
+  // Ensure any previous peer connection is completely wiped before re-queuing
+  WebRTC.closePeer();
+  socket.emit('leave-room');
+  if ($('remote')) $('remote').srcObject = null;
+
+  const profileData = profileDataOverride || Profile.get() || {};
+  socket.emit('find-stranger', profileData);
+  
+  setStatus(statusText, 'warn');
+  setState('searching');
+}
+
+/**
+ * Called by ProfileUI when "Find a Stranger" is clicked and profile is saved.
+ */
+function _onLobbySubmit(savedProfile) {
+  queueForStranger(savedProfile);
 }
 
 // ── Socket lifecycle ──────────────────────────────────────────────────────
@@ -239,7 +323,8 @@ function bindSocketEvents() {
 
   socket.on('peer-left', () => {
     WebRTC.closePeer();
-    setState('idle', 'Stranger disconnected — find a new one?', 'warn');
+    if ($('remote')) $('remote').srcObject = null;
+    setState('idle', 'Stranger disconnected — click Find Stranger to try again', 'warn');
   });
 
   // ── WebRTC signaling relay ───────────────────────────────────────────
@@ -265,62 +350,29 @@ function onRtcStateChange(rtcState) {
 
 // ── Button handlers ───────────────────────────────────────────────────────
 
-/** Step 1: Request camera + mic access. Unlocks the matchmaking buttons. */
-$('start').onclick = async () => {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  } catch (err) {
-    setStatus('Camera blocked: ' + err.name, 'err');
-    return;
-  }
-  const localVideo = $('local');
-  localVideo.srcObject = localStream;
-  localVideo.onloadedmetadata = () => {
-    if (localVideo.videoWidth && localVideo.videoHeight) {
-      const ratio = localVideo.videoWidth / localVideo.videoHeight;
-      const card = $('local-card');
-      if (card) card.style.aspectRatio = ratio.toString();
-    }
-  };
-  $('local-overlay').style.display = 'none'; // lift the overlay off the live feed
-  setState('idle', 'Camera on — click Find Stranger to begin', 'warn');
-};
-
 /**
- * Find Stranger — enter the matchmaking queue.
- * The server will either match us immediately or emit "searching".
+ * Find Stranger — enter the matchmaking queue directly from the dashboard.
  */
-$('find').onclick = () => {
-  if (!socket || !socket.connected) return;
-  // Attach profile data so the server can use it for future matchmaking filters
-  const profileData = Profile.get() ?? {};
-  socket.emit('find-stranger', profileData);
-  // Optimistically update status while awaiting server echo
-  setStatus('Entering queue…', 'warn');
-};
+if ($('find')) {
+  $('find').onclick = () => queueForStranger();
+}
 
 /**
  * Next / Skip — tear down the current call and immediately re-queue.
  * Leaves the current room server-side, then asks for a new stranger.
  */
-$('next').onclick = () => {
-  if (!socket || !socket.connected) return;
-  WebRTC.closePeer();
-  socket.emit('leave-room');
-  const profileData = Profile.get() ?? {};
-  socket.emit('find-stranger', profileData);
-  setStatus('Finding next stranger…', 'warn');
-};
+$('next').onclick = () => queueForStranger(null, 'Finding next stranger…');
 
 /**
  * Stop — tear down any active call or cancel a pending search.
- * Returns to the idle state without re-queuing.
+ * Returns to the stopped state without re-queuing.
  */
 $('stop').onclick = () => {
   if (!socket || !socket.connected) return;
   WebRTC.closePeer();
   socket.emit('leave-room');
-  setState('idle', 'Stopped — click Find Stranger to try again', null);
+  if ($('remote')) $('remote').srcObject = null;
+  setState('stopped', 'Stopped — click Find Stranger to try again', null);
 };
 
 // ── Auth buttons ──────────────────────────────────────────────────────────
@@ -337,12 +389,12 @@ $('logout').onclick = async () => {
   await Auth.signOut();
 };
 
-// Edit Profile button (in header) — opens modal pre-filled with existing data
+// Edit Profile button (in header) — opens lobby again
 const editProfileBtn = $('edit-profile-btn');
 if (editProfileBtn) {
   editProfileBtn.addEventListener('click', () => {
     const session = Auth.getSession();
-    if (session) ProfileUI.open(session, Profile.get(), _onProfileSaved);
+    if (session) ProfileUI.open(session, Profile.get(), _onLobbySubmit);
   });
 }
 

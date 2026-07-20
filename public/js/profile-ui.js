@@ -72,13 +72,13 @@ window.ProfileUI = (() => {
     _render();
     _prefill(existingProfile);
 
-    const modal = $('profile-modal');
+    const modal = $('green-room-lobby');
     if (!modal) {
-      console.error('[ProfileUI] FATAL: #profile-modal not found in DOM!');
+      console.error('[ProfileUI] FATAL: #green-room-lobby not found in DOM!');
       return;
     }
 
-    const sheet = modal.querySelector('.profile-sheet');
+    const sheet = modal.querySelector('.green-room-card');
 
     // Force-show: bypass CSS transitions entirely so nothing can hide it
     modal.style.display       = 'flex';
@@ -92,7 +92,7 @@ window.ProfileUI = (() => {
       sheet.style.transform  = 'translateY(0) scale(1)';
     }
 
-    console.log('[ProfileUI] modal is now visible');
+    console.log('[ProfileUI] Lobby is now visible');
 
     setTimeout(() => { if (sheet) sheet.focus(); }, 80);
   }
@@ -101,7 +101,7 @@ window.ProfileUI = (() => {
    * Hide the modal with an exit animation.
    */
   function close() {
-    const modal = $('profile-modal');
+    const modal = $('green-room-lobby');
     modal.classList.remove('is-open');
     // Wait for CSS transition to finish before hiding
     modal.addEventListener('transitionend', () => {
@@ -583,7 +583,7 @@ window.ProfileUI = (() => {
     const btn = $('prof-save-btn');
     if (!btn) return;
     btn.disabled = on;
-    btn.textContent = on ? 'Saving…' : 'Save Profile';
+    btn.textContent = on ? 'Entering Queue…' : 'Find a Stranger';
   }
 
   function _showError(msg) {
@@ -607,13 +607,6 @@ window.ProfileUI = (() => {
 
     const saveBtn = $('prof-save-btn');
     if (saveBtn) saveBtn.addEventListener('click', _handleSave);
-
-    // Close on backdrop click
-    const backdrop = document.querySelector('#profile-modal .profile-backdrop');
-    if (backdrop) backdrop.addEventListener('click', () => {
-      // Only allow closing if the user already has a complete profile (i.e. this is an edit)
-      if (Profile.isComplete(Profile.get())) close();
-    });
   }
 
   // Defer binding until the DOM is fully parsed

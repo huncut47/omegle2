@@ -821,91 +821,142 @@ body {
 #app > *:nth-child(2) { animation-delay: 60ms; }
 #app > *:nth-child(3) { animation-delay: 120ms; }
 
-/* ── 12. Profile Modal ────────────────────────────────────── */
+/* ── 12. Green Room Lobby ────────────────────────────────────── */
 
-/* Full-viewport flex container — holds backdrop + sheet */
-#profile-modal {
+/* Full-viewport overlay */
+#green-room-lobby {
   position: fixed;
   inset: 0;
-  z-index: 500;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px 16px;
-  /* start invisible; JS adds .is-open to trigger transition */
+  background: #090d16; /* Obscure underlying UI fully */
+  /* Start invisible; JS adds .is-open to trigger transition */
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--t-md);
+  transition: opacity 0.5s ease;
+  overflow: hidden;
 }
 
-#profile-modal.is-open {
+#green-room-lobby.is-open {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* ── Blurred dark backdrop ── */
-.profile-backdrop {
+/* ── Blurred dark background video ── */
+#green-room-bg {
   position: absolute;
-  inset: 0;
-  background: rgba(4, 6, 15, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* ── Scrollable sheet ── */
-.profile-sheet {
-  position: relative;         /* above backdrop */
-  z-index: 1;
-  width: min(520px, 100%);
-  max-height: calc(100dvh - 40px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 36px 36px 40px;
-
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-2xl);
-  box-shadow: var(--shadow-lg), var(--shadow-inset);
-
-  /* Entrance animation — JS resets and re-triggers this on every open() call */
-  animation: sheet-up 360ms var(--ease-out) forwards;
-  outline: none;              /* remove focus ring from tabindex=-1 */
-}
-
-/* Gradient border glow on the sheet */
-.profile-sheet::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: calc(var(--r-2xl) + 1px);
-  background: linear-gradient(
-    135deg,
-    rgba(92, 111, 245, 0.50) 0%,
-    transparent 45%,
-    rgba(16, 185, 129, 0.20) 100%
-  );
-  z-index: -1;
+  inset: -10%; /* Oversize slightly to hide blurred edges */
+  width: 120%;
+  height: 120%;
+  object-fit: cover;
+  filter: blur(20px) brightness(0.4);
+  z-index: 0;
   pointer-events: none;
 }
 
-/* ── Header ── */
-.prof-header {
-  margin-bottom: 28px;
-  text-align: center;
+/* ── Glassmorphic card ── */
+.green-room-card {
+  position: relative;         /* above background */
+  z-index: 1;
+  width: min(850px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow: hidden; /* Contain scrollbar inside rounded corners */
+
+  background: rgba(13, 16, 27, 0.65); /* Semi-transparent base */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--r-2xl);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  animation: sheet-up 360ms var(--ease-out) forwards;
+  outline: none;
+  display: flex;
+  flex-direction: column;
 }
 
-.prof-title {
-  font-size: 22px;
+/* Scrollable Inner Wrapper */
+.gr-scroll-content {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 36px 36px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Header ── */
+.gr-header {
+  text-align: center;
+}
+.gr-title {
+  font-size: 26px;
   font-weight: 700;
   color: var(--text-1);
   letter-spacing: -0.3px;
   margin-bottom: 6px;
 }
-
-.prof-subtitle {
-  font-size: 14px;
+.gr-subtitle {
+  font-size: 15px;
   color: var(--text-2);
   line-height: 1.6;
+}
+
+/* ── Body Grid ── */
+.gr-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+@media (max-width: 768px) {
+  .gr-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Hardware Section ── */
+.gr-hardware {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.gr-preview-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-sm);
+}
+#green-room-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror */
+  display: block;
+}
+.gr-device-selects {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Profile Section ── */
+.gr-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Footer ── */
+.gr-footer {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
 }
 
 /* ── Avatar section ── */

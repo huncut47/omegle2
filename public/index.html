@@ -227,130 +227,148 @@
   </div><!-- /#app -->
 
   <!-- ══════════════════════════════════════════════════════════
-       PROFILE SETUP MODAL
-       JS: ProfileUI.open() / ProfileUI.close()
+       GREEN ROOM LOBBY — The New Main Menu
        ══════════════════════════════════════════════════════════ -->
-  <div id="profile-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+  <div id="green-room-lobby" style="display:none">
+    
+    <!-- Blurred live background feed -->
+    <video id="green-room-bg" autoplay playsinline muted></video>
 
-    <!-- Backdrop (click = close if profile already complete) -->
-    <div class="profile-backdrop"></div>
+    <!-- Centered Glassmorphic Card -->
+    <div class="green-room-card">
+      <div class="gr-scroll-content">
+        <div class="gr-header">
+          <h2 class="gr-title">Welcome to the Green Room</h2>
+          <p class="gr-subtitle">Check your camera and set up your vibe before jumping in.</p>
+        </div>
 
-    <!-- Scrollable sheet -->
-    <div class="profile-sheet" tabindex="-1">
-
-      <!-- ── Header ─────────────────────────────────────────── -->
-      <div class="prof-header">
-        <h2 id="profile-modal-title" class="prof-title">Set Up Your Profile</h2>
-        <p class="prof-subtitle">Tell people a bit about yourself before jumping in.</p>
-      </div>
-
-      <!-- ── Avatar ─────────────────────────────────────────── -->
-      <div class="prof-avatar-section">
-        <div id="avatar-circle" class="avatar-circle" role="button" tabindex="0"
-             aria-label="Upload profile picture" title="Click to upload a photo">
-          <!-- Fallback SVG shown until an image is selected -->
-          <div id="avatar-placeholder" class="avatar-placeholder" aria-hidden="true">
-            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="8" r="4"/>
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-            </svg>
+      <div class="gr-body">
+        
+        <!-- Hardware Check (Left Column on wide, top on mobile) -->
+        <div class="gr-hardware">
+          <div class="gr-preview-wrap">
+            <video id="green-room-preview" autoplay playsinline muted></video>
           </div>
-          <!-- Preview fills the circle once a file is chosen -->
-          <img id="avatar-preview" class="avatar-preview" src="" alt="Your profile photo" style="display:none">
-          <!-- Camera overlay shown on hover -->
-          <div class="avatar-camera-overlay" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
+          
+          <div class="gr-device-selects">
+            <div class="prof-field">
+              <label class="prof-label" for="camera-select">Camera</label>
+              <select id="camera-select" class="prof-input prof-select"></select>
+            </div>
+            <div class="prof-field">
+              <label class="prof-label" for="mic-select">Microphone</label>
+              <select id="mic-select" class="prof-input prof-select"></select>
+            </div>
           </div>
-          <!-- Hidden native file picker -->
-          <input id="avatar-file-input" type="file" accept="image/*" aria-hidden="true"
-                 style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
         </div>
-        <p class="avatar-hint">Click to upload a photo</p>
-      </div>
 
-      <!-- ── Nickname ───────────────────────────────────────── -->
-      <div class="prof-field prof-field--full">
-        <label class="prof-label" for="prof-nickname">
-          Nickname <span class="prof-label-hint">(optional — shown to strangers)</span>
-        </label>
-        <input id="prof-nickname" class="prof-input" type="text"
-               maxlength="32" placeholder="e.g. alex_vibes" autocomplete="off">
-      </div>
-
-      <!-- ── Age + Gender (inline row) ──────────────────────── -->
-      <div class="prof-row">
-        <div class="prof-field">
-          <label class="prof-label" for="prof-age">Age</label>
-          <input id="prof-age" class="prof-input" type="number" min="13" max="120"
-                 placeholder="e.g. 24" autocomplete="off">
-        </div>
-        <div class="prof-field">
-          <label class="prof-label" for="prof-gender">Gender</label>
-          <select id="prof-gender" class="prof-input prof-select">
-            <option value="" disabled selected>Select…</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="non-binary">Non-binary</option>
-            <option value="prefer-not-to-say">Prefer not to say</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- ── Activities ──────────────────────────────────────── -->
-      <div class="prof-section">
-        <label class="prof-label">Interests <span class="prof-label-hint">(pick your favourites)</span></label>
-        <!-- Pills injected by profile-ui.js -->
-        <div id="activity-grid" class="activity-grid" role="group" aria-label="Interests"></div>
-      </div>
-
-      <!-- ── Top 5 Songs ─────────────────────────────────────── -->
-      <div class="prof-section">
-        <label class="prof-label" for="song-tag-input">
-          Top 5 Songs <span class="prof-label-hint">(optional — search &amp; select)</span>
-        </label>
-        <!-- .song-search-wrap gives the dropdown its positioning anchor -->
-        <div class="song-search-wrap">
-          <!-- Search bar: icon + input only (no inline pills) -->
-          <div id="song-tag-box" class="song-tag-box">
-            <svg class="song-search-icon" width="14" height="14" viewBox="0 0 24 24"
-                 fill="none" stroke="currentColor" stroke-width="2.2"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input id="song-tag-input" class="song-tag-input"
-                   type="text" placeholder="Search for a song…"
-                   maxlength="80" autocomplete="off"
-                   aria-autocomplete="list" aria-controls="song-dropdown">
+        <!-- Profile Setup (Right Column) -->
+        <div class="gr-profile">
+          
+          <!-- Avatar -->
+          <div class="prof-avatar-section">
+            <div id="avatar-circle" class="avatar-circle" role="button" tabindex="0"
+                 aria-label="Upload profile picture" title="Click to upload a photo">
+              <div id="avatar-placeholder" class="avatar-placeholder" aria-hidden="true">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="4"/>
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                </svg>
+              </div>
+              <img id="avatar-preview" class="avatar-preview" src="" alt="Your profile photo" style="display:none">
+              <div class="avatar-camera-overlay" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </div>
+              <input id="avatar-file-input" type="file" accept="image/*" aria-hidden="true"
+                     style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
+            </div>
+            <p class="avatar-hint">Click to upload a photo</p>
           </div>
-          <!-- Autocomplete dropdown -->
-          <div id="song-dropdown" class="song-dropdown"
-               role="listbox" aria-label="Song search results"
-               style="display:none"></div>
-        </div>
-        <!-- Vertical selected track list — rows injected by profile-ui.js -->
-        <div id="song-selected-list" class="song-selected-list"
-             role="list" aria-label="Selected songs"></div>
-        <p class="song-tag-counter">
-          <span id="song-tag-count">0</span> / 5 songs added
-        </p>
-      </div>
 
-      <!-- ── Error banner ────────────────────────────────────── -->
+          <!-- Nickname -->
+          <div class="prof-field prof-field--full">
+            <label class="prof-label" for="prof-nickname">
+              Nickname <span class="prof-label-hint">(optional)</span>
+            </label>
+            <input id="prof-nickname" class="prof-input" type="text"
+                   maxlength="32" placeholder="e.g. alex_vibes" autocomplete="off">
+          </div>
+
+          <!-- Age & Gender -->
+          <div class="prof-row">
+            <div class="prof-field">
+              <label class="prof-label" for="prof-age">Age</label>
+              <input id="prof-age" class="prof-input" type="number" min="13" max="120"
+                     placeholder="e.g. 24" autocomplete="off">
+            </div>
+            <div class="prof-field">
+              <label class="prof-label" for="prof-gender">Gender</label>
+              <select id="prof-gender" class="prof-input prof-select">
+                <option value="" disabled selected>Select…</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="non-binary">Non-binary</option>
+                <option value="prefer-not-to-say">Prefer not to say</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Interests -->
+          <div class="prof-section">
+            <label class="prof-label">Interests <span class="prof-label-hint">(pick your favourites)</span></label>
+            <div id="activity-grid" class="activity-grid" role="group" aria-label="Interests"></div>
+          </div>
+
+          <!-- Top Songs -->
+          <div class="prof-section">
+            <label class="prof-label" for="song-tag-input">
+              Top 5 Songs <span class="prof-label-hint">(optional — search &amp; select)</span>
+            </label>
+            <div class="song-search-wrap">
+              <div id="song-tag-box" class="song-tag-box">
+                <svg class="song-search-icon" width="14" height="14" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input id="song-tag-input" class="song-tag-input"
+                       type="text" placeholder="Search for a song…"
+                       maxlength="80" autocomplete="off"
+                       aria-autocomplete="list" aria-controls="song-dropdown">
+              </div>
+              <div id="song-dropdown" class="song-dropdown"
+                   role="listbox" aria-label="Song search results"
+                   style="display:none"></div>
+            </div>
+            <div id="song-selected-list" class="song-selected-list"
+                 role="list" aria-label="Selected songs"></div>
+            <p class="song-tag-counter">
+              <span id="song-tag-count">0</span> / 5 songs added
+            </p>
+          </div>
+
+        </div> <!-- /.gr-profile -->
+      </div> <!-- /.gr-body -->
+
+      <!-- Error banner -->
       <div id="prof-error" class="prof-error" style="display:none" role="alert"></div>
 
-      <!-- ── Save button ─────────────────────────────────────── -->
-      <button id="prof-save-btn" class="btn btn-primary prof-save-btn">
-        Save Profile
-      </button>
+      <!-- Action Button -->
+      <div class="gr-footer">
+        <button id="prof-save-btn" class="btn btn-primary prof-save-btn">
+          Find a Stranger
+        </button>
+      </div>
 
-    </div><!-- /.profile-sheet -->
-  </div><!-- /#profile-modal -->
+      </div> <!-- /.gr-scroll-content -->
+    </div> <!-- /.green-room-card -->
+  </div> <!-- /#green-room-lobby -->
 
   <!-- Supabase (self-hosted, no external CDN) -->
   <script src="/vendor/supabase.js"></script>

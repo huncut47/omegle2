@@ -85,6 +85,16 @@ window.Auth = (() => {
   }
 
   /**
+   * Return the initialized Supabase client instance.
+   * Allows other modules (e.g. profile.js) to reuse the same client
+   * without fetching /config a second time.
+   * @returns {object|null}
+   */
+  function getClient() {
+    return _sb;
+  }
+
+  /**
    * Register a callback that is invoked every time the session changes.
    * The callback receives the new session (or null on sign-out).
    * @param {function} fn
@@ -93,5 +103,5 @@ window.Auth = (() => {
     _listeners.push(fn);
   }
 
-  return { init, signIn, signOut, getSession, onSessionChange };
+  return { init, signIn, signOut, getSession, getClient, onSessionChange };
 })();

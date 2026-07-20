@@ -109,7 +109,11 @@ body {
   line-height: 1.5;
   color: var(--text-1);
   background: var(--bg);
-  min-height: 100dvh;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
@@ -221,6 +225,25 @@ body {
   line-height: 1.55;
 }
 
+/* Subtle text-link below the legal copy — opens modal for preview/testing */
+.gate-preview-btn {
+  margin-top: 14px;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 4px 0;
+  transition: color var(--t-sm);
+}
+
+.gate-preview-btn:hover {
+  color: var(--indigo-light);
+}
+
 /* Google sign-in button */
 .btn-google {
   display: flex;
@@ -258,18 +281,19 @@ body {
 /* ── 4. App Layout ─────────────────────────────────────────────────── */
 
 /*
-  JS sets #app to display:'grid' when the user is authenticated.
-  We define the grid geometry here so it activates automatically.
+  JS sets #app to display:'flex' when the user is authenticated.
+  We define the geometry here so it activates automatically.
 */
 #app {
-  /* display: grid — set by main.js */
-  grid-template-rows: auto 1fr auto;
-  grid-template-columns: 1fr;
-  gap: 18px;
-  min-height: 100dvh;
+  /* display: flex — set by main.js */
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   max-width: 1100px;
   margin: 0 auto;
   padding: 18px 18px 28px;
+  width: 100%;
+  gap: 18px;
 }
 
 /* ── 5. Header ─────────────────────────────────────────────────────── */
@@ -283,6 +307,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-sm), var(--shadow-inset);
+  flex-shrink: 0;
 }
 
 .header-brand {
@@ -349,10 +374,26 @@ body {
 
 /* ── 6. Video Grid ─────────────────────────────────────────────────── */
 .video-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 14px;
-  min-height: 0; /* allow shrink inside 1fr row */
+  width: 100%;
+  position: relative;
+  flex-grow: 1;
+  min-height: 0;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.video-grid.is-active {
+  padding-right: 350px;
+}
+
+#local-card {
+  flex: 1 1 0%; /* Absorb all shrinking space */
+  min-width: 0;
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* Individual video tile */
@@ -362,7 +403,9 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
   overflow: hidden;
-  aspect-ratio: 16 / 9;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9; /* Default fallback until JS overrides */
   transition:
     border-color var(--t-md),
     box-shadow   var(--t-md);
@@ -382,6 +425,7 @@ body {
   object-fit: cover;
   display: block;
   background: #000;
+  transform: scaleX(-1); /* Mirror both video feeds */
 }
 
 /* ── Camera-off local overlay ──
@@ -471,17 +515,19 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* ── 7. Controls Dashboard ─────────────────────────────────────────── */
+/* ── 7. Call Controls ──────────────────────────────────────────────── */
 .controls-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 18px;
+  padding: 12px 24px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-sm), var(--shadow-inset);
+  flex-shrink: 0;
+  margin-top: auto;
   flex-wrap: wrap;
 }
 
@@ -643,6 +689,15 @@ body {
   color: var(--text-2);
 }
 
+/* ── Icon + text — compact header button variant ── */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
 /* ── 9. Status Dot ─────────────────────────────────────────────────── */
 
 /* The dot element — JS sets class: 'dot' | 'dot on' | 'dot warn' | 'dot err' */
@@ -705,6 +760,34 @@ body {
   }
 }
 
+/* ── 10. Keyframe Animations ────────────────────────────────── */
+
+/* Pulsing ring on the status dot when searching */
+@keyframes dot-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0   rgba(245, 158, 11, 0.65),
+      0 0 8px   rgba(245, 158, 11, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 7px rgba(245, 158, 11, 0),
+      0 0 0     rgba(245, 158, 11, 0);
+  }
+}
+
+/* Pulsing icon in remote placeholder when searching */
+@keyframes icon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(92, 111, 245, 0.4);
+    background: var(--surface-3);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(92, 111, 245, 0);
+    background: rgba(92, 111, 245, 0.08);
+  }
+}
+
 /* Smooth fade-up entry for cards */
 @keyframes fade-up {
   from {
@@ -717,6 +800,18 @@ body {
   }
 }
 
+/* Profile modal sheet entrance */
+@keyframes sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* Page-in animation for the app shell */
 #app > * {
   animation: fade-up var(--t-lg) var(--ease-out) both;
@@ -725,6 +820,816 @@ body {
 #app > *:nth-child(1) { animation-delay:  0ms; }
 #app > *:nth-child(2) { animation-delay: 60ms; }
 #app > *:nth-child(3) { animation-delay: 120ms; }
+
+/* ── 12. Profile Modal ────────────────────────────────────── */
+
+/* Full-viewport flex container — holds backdrop + sheet */
+#profile-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  /* start invisible; JS adds .is-open to trigger transition */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-md);
+}
+
+#profile-modal.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Blurred dark backdrop ── */
+.profile-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 6, 15, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Scrollable sheet ── */
+.profile-sheet {
+  position: relative;         /* above backdrop */
+  z-index: 1;
+  width: min(520px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 36px 36px 40px;
+
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2xl);
+  box-shadow: var(--shadow-lg), var(--shadow-inset);
+
+  /* Entrance animation — JS resets and re-triggers this on every open() call */
+  animation: sheet-up 360ms var(--ease-out) forwards;
+  outline: none;              /* remove focus ring from tabindex=-1 */
+}
+
+/* Gradient border glow on the sheet */
+.profile-sheet::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--r-2xl) + 1px);
+  background: linear-gradient(
+    135deg,
+    rgba(92, 111, 245, 0.50) 0%,
+    transparent 45%,
+    rgba(16, 185, 129, 0.20) 100%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ── Header ── */
+.prof-header {
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.prof-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.3px;
+  margin-bottom: 6px;
+}
+
+.prof-subtitle {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+/* ── Avatar section ── */
+.prof-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+/* Clickable avatar ring */
+.avatar-circle {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 2px solid var(--border);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color var(--t-sm),
+    box-shadow   var(--t-sm);
+}
+
+.avatar-circle:hover {
+  border-color: var(--indigo);
+  box-shadow:
+    0 0 0 4px var(--indigo-dim),
+    0 0 18px  var(--indigo-glow);
+}
+
+/* Default person icon inside the circle */
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-4);
+}
+
+/* Uploaded photo preview */
+.avatar-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Camera icon overlay — fades in on hover */
+.avatar-camera-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  opacity: 0;
+  transition: opacity var(--t-sm);
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.avatar-circle:hover .avatar-camera-overlay {
+  opacity: 1;
+}
+
+.avatar-hint {
+  font-size: 12px;
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* ── Age + Gender row ── */
+.prof-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.prof-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Full-width variant — spans both columns of .prof-row grid, or stands alone */
+.prof-field--full {
+  grid-column: 1 / -1;
+  margin-bottom: 24px;
+}
+
+/* ── Section wrapper (activities, songs) ── */
+.prof-section {
+  margin-bottom: 24px;
+}
+
+/* ── Form labels ── */
+.prof-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+
+.prof-label-hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+/* ── Text / number inputs and select ── */
+.prof-input {
+  width: 100%;
+  padding: 10px 13px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-1);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+  transition:
+    border-color var(--t-sm),
+    box-shadow   var(--t-sm),
+    background   var(--t-sm);
+  /* Remove browser number spinners */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.prof-input::-webkit-inner-spin-button,
+.prof-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.prof-input::placeholder {
+  color: var(--text-4);
+}
+
+.prof-input:focus {
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 3px var(--indigo-dim);
+  background: var(--surface-4);
+}
+
+/* Select-specific overrides */
+.prof-select {
+  cursor: pointer;
+  /* Custom dropdown arrow */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa3cc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.prof-select option {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+
+/* ── Activity pills grid ── */
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+/* Individual pill button */
+.activity-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 10px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text-2);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    background    var(--t-sm),
+    border-color  var(--t-sm),
+    color         var(--t-sm),
+    box-shadow    var(--t-sm),
+    transform     var(--t-sm);
+}
+
+.activity-pill:hover {
+  background: var(--surface-4);
+  border-color: var(--border-hover);
+  color: var(--text-1);
+  transform: translateY(-1px);
+}
+
+/* Selected state — indigo filled */
+.activity-pill.active {
+  background: var(--indigo-dim);
+  border-color: var(--indigo);
+  color: var(--indigo-light);
+  box-shadow:
+    0 0 0 3px var(--indigo-dim),
+    0 0 12px  var(--indigo-glow);
+}
+
+.activity-pill.active:hover {
+  background: rgba(92, 111, 245, 0.22);
+}
+
+.pill-emoji {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.pill-label {
+  font-size: 13px;
+}
+
+/* ── Song search bar ── */
+
+.song-tag-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  transition:
+    border-color var(--t-sm),
+    box-shadow   var(--t-sm),
+    background   var(--t-sm);
+}
+
+.song-tag-box:focus-within {
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 3px var(--indigo-dim);
+  background: var(--surface-4);
+}
+
+/* Dim and lock when 5-song cap is reached */
+.song-tag-box[data-full='true'] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Magnifier icon */
+.song-search-icon {
+  flex-shrink: 0;
+  color: var(--text-3);
+  transition: color var(--t-sm);
+}
+
+.song-tag-box:focus-within .song-search-icon {
+  color: var(--indigo-light);
+}
+
+/* The text input inside the bar */
+.song-tag-input {
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-1);
+  font-family: var(--font);
+  font-size: 14px;
+  caret-color: var(--indigo-light);
+}
+
+.song-tag-input::placeholder {
+  color: var(--text-4);
+}
+
+/* ── Vertical selected track list ── */
+
+.song-selected-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  /* min-height: 0 allows the list to shrink when empty */
+}
+
+/* Individual track row — Spotify-style card */
+.song-row-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  transition:
+    border-color var(--t-sm),
+    background   var(--t-sm);
+  animation: fade-up 220ms var(--ease-out) both;
+}
+
+.song-row-card:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-3);
+}
+
+/* Track number badge */
+.song-row-num {
+  flex-shrink: 0;
+  width: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-4);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Album art thumbnail */
+.song-row-art {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--r-xs);
+  object-fit: cover;
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+}
+
+/* Track name + artist stack */
+.song-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-row-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.song-row-artist {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Trash/remove button */
+.song-row-remove {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-4);
+  cursor: pointer;
+  transition:
+    background    var(--t-xs),
+    border-color  var(--t-xs),
+    color         var(--t-xs);
+}
+
+.song-row-remove:hover {
+  background: var(--red-dim);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: var(--red);
+}
+
+/* ── Counter line below the list ── */
+.song-tag-counter {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--t-sm);
+}
+
+/* Turn counter green when all 5 slots are filled */
+.song-tag-counter.is-full {
+  color: var(--green);
+}
+
+/* ── Autocomplete dropdown ── */
+
+/* Positioning anchor for the floating panel */
+.song-search-wrap {
+  position: relative;
+}
+
+/* The floating results panel */
+.song-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 600;
+  background: var(--surface-2);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--r-md);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px rgba(92, 111, 245, 0.12);
+  overflow: hidden;
+  /* Entrance animation */
+  animation: dropdown-drop 160ms var(--ease-out) both;
+}
+
+@keyframes dropdown-drop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* Each result row */
+.song-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background var(--t-xs);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.song-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.song-dropdown-item:hover {
+  background: var(--surface-3);
+}
+
+.song-dropdown-item:active {
+  background: var(--surface-4);
+}
+
+/* Album artwork thumbnail */
+.song-dropdown-artwork {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-xs);
+  flex-shrink: 0;
+  object-fit: cover;
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+}
+
+/* Text block */
+.song-dropdown-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-dropdown-track {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-dropdown-artist {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Loading / no-results message */
+.song-dropdown-msg {
+  padding: 14px;
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ── Error banner ── */
+.prof-error {
+  margin-bottom: 16px;
+  padding: 11px 14px;
+  background: var(--red-dim);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: var(--r-sm);
+  color: var(--red);
+  font-size: 13px;
+  line-height: 1.5;
+  animation: fade-up 200ms var(--ease-out) both;
+}
+
+/* ── Save button (full-width) ── */
+.prof-save-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 13px;
+  font-size: 15px;
+  margin-top: 4px;
+  box-shadow: 0 4px 20px rgba(92, 111, 245, 0.35);
+}
+
+.prof-save-btn:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 4px var(--indigo-dim),
+    0 6px 24px var(--indigo-glow);
+  transform: translateY(-2px);
+}
+
+/* ── Remote Column ─────────────────────────────────────────────────── */
+.remote-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 0 0 calc((min(100vw, 1100px) - 50px) / 2); /* ALWAYS rigid 50%! */
+  min-width: 0;
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ── Partner Profile Trigger & Expansion ─────────────────────────────── */
+.partner-profile-container {
+  position: absolute;
+  bottom: 15px;
+  left: calc(50% + 7px + 15px); /* Anchored to stranger's video bottom-left */
+  z-index: 10;
+}
+
+.partner-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: all var(--t-sm);
+}
+
+.partner-profile-btn:hover {
+  background: var(--surface-4);
+  color: var(--text-1);
+}
+
+.partner-profile-panel {
+  flex-shrink: 0;
+  width: 0px;
+  background: var(--surface-2); 
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-sm), var(--shadow-inset);
+  
+  /* Hidden by default (slide-out style) */
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  border-width: 0;
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  max-height: 100%;
+  z-index: 20;
+}
+
+/* Show the panel when JS adds .is-active to the video-grid */
+.video-grid.is-active .partner-profile-panel {
+  width: 350px;
+  opacity: 1;
+  padding: 16px;
+  border-width: 1px;
+  overflow-y: auto;
+}
+
+.partner-profile-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.partner-profile-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.partner-profile-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--r-pill);
+}
+.partner-profile-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.partner-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.partner-avatar-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.partner-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.partner-avatar-fallback {
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.partner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.partner-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.partner-demographics {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.partner-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.partner-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+}
+
+.partner-activity-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.partner-activity-grid .activity-pill {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--surface-3);
+  border-color: transparent;
+  cursor: default;
+}
+.partner-activity-grid .activity-pill:hover {
+  transform: none;
+  border-color: transparent;
+}
+
+.partner-song-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.partner-song-list .song-row-card {
+  padding: 6px 10px 6px 6px;
+  background: var(--surface-3);
+}
+
+.partner-song-list .song-row-remove {
+  display: none !important;
+}
 
 /* ── 11. Responsive ────────────────────────────────────────────────── */
 
@@ -745,6 +1650,10 @@ body {
 
   .gate-card {
     padding: 40px 28px 32px;
+  }
+
+  .profile-sheet {
+    padding: 28px 24px 32px;
   }
 }
 
@@ -781,6 +1690,19 @@ body {
   .gate-card {
     padding: 36px 22px 28px;
   }
+
+  /* Profile modal — stack age/gender vertically on mobile */
+  .prof-row {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-sheet {
+    padding: 24px 18px 28px;
+  }
+
+  .activity-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
 }
 
 /* Very small — even tighter */
@@ -792,5 +1714,9 @@ body {
 
   .btn-row {
     gap: 8px;
+  }
+
+  .activity-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

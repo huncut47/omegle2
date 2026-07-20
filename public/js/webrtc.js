@@ -71,7 +71,16 @@ window.WebRTC = (() => {
     // Route the remote stream to the <video id="remote"> element
     _pc.ontrack = event => {
       const remoteVideo = document.getElementById('remote');
-      if (remoteVideo) remoteVideo.srcObject = event.streams[0];
+      if (remoteVideo) {
+        remoteVideo.srcObject = event.streams[0];
+        remoteVideo.onloadedmetadata = () => {
+          if (remoteVideo.videoWidth && remoteVideo.videoHeight) {
+            const ratio = remoteVideo.videoWidth / remoteVideo.videoHeight;
+            const card = document.getElementById('remote-wrap');
+            if (card) card.style.aspectRatio = ratio.toString();
+          }
+        };
+      }
     };
 
     // Trickle ICE: emit each candidate as it is discovered

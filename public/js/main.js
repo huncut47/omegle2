@@ -3,6 +3,7 @@
  *
  * Responsibilities:
  *   • Initialize Auth and render auth-gated UI.
+ *   • Check / prompt for a complete user profile after sign-in.
  *   • Manage a single persistent Socket.IO connection (connected on auth,
  *     disconnected on sign-out — NOT per room-join as before).
  *   • Drive a clear 4-state UI machine: camera-off → idle → searching → connected.
@@ -24,6 +25,8 @@
  *   • /socket.io/socket.io.js  → global `io`
  *   • /js/auth.js              → global `Auth`
  *   • /js/webrtc.js            → global `WebRTC`
+ *   • /js/profile.js           → global `Profile`
+ *   • /js/profile-ui.js        → global `ProfileUI`
  */
 
 // ── Shorthand helper ──────────────────────────────────────────────────────
@@ -87,6 +90,18 @@ function setState(state, statusText, statusCls) {
     // connected — hide overlay so the remote video shows through
     placeholder.style.display = 'none';
   }
+
+  // ── Partner Profile Overlay ──────────────────────────────────────────
+  const videoGrid = $('video-grid');
+  const partnerContainer = $('partner-profile-container');
+  if (state === 'connected') {
+    videoGrid?.classList.remove('with-sidebar');
+    if (partnerContainer) partnerContainer.style.display = 'block';
+  } else {
+    videoGrid?.classList.remove('with-sidebar');
+    if (partnerContainer) partnerContainer.style.display = 'none';
+    if (typeof resetPartnerProfile === 'function') resetPartnerProfile();
+  }
 }
 
 // ── Status indicator ──────────────────────────────────────────────────────
@@ -113,16 +128,49 @@ function renderAuth(session) {
   const authed = !!session;
 
   $('gate').style.display    = authed ? 'none'  : 'block';
-  $('app').style.display     = authed ? 'grid'  : 'none';
+  $('app').style.display     = authed ? 'flex'  : 'none';
   $('account').style.display = authed ? 'flex'  : 'none';
 
   if (authed) {
     $('who').textContent = session.user.email;
     connectSocket(session);       // opens socket if not already open
+    _checkProfile(session);       // ensure profile is complete before matching
   } else {
     disconnectSocket();           // closes socket and resets state
     setState('camera-off', 'Not started');
   }
+}
+
+/**
+ * Load the user's profile and open the setup modal only if the profile
+ * is not yet complete (i.e. first-time users or incomplete returning users).
+ * Returning users with a full profile bypass the modal entirely.
+ * @param {object} session
+ */
+async function _checkProfile(session) {
+  try {
+    Profile.init(Auth.getClient());
+    const profile = await Profile.load(session.user.id);
+
+    if (!Profile.isComplete(profile)) {
+      // First-time user or incomplete profile — show onboarding modal
+      ProfileUI.open(session, profile, _onProfileSaved);
+    }
+    // else: profile is complete — silently cached, no modal
+
+  } catch (err) {
+    console.error('[main] _checkProfile threw:', err);
+    ProfileUI.open(session, null, _onProfileSaved);
+  }
+}
+
+/**
+ * Called by ProfileUI after a successful profile save.
+ * @param {object} savedProfile
+ */
+function _onProfileSaved(savedProfile) {
+  // Nothing extra to do — the app is already rendered, profile is cached in Profile.get()
+  console.log('[main] Profile saved:', savedProfile?.age, savedProfile?.gender);
 }
 
 // ── Socket lifecycle ──────────────────────────────────────────────────────
@@ -181,8 +229,9 @@ function bindSocketEvents() {
    * Server matched us with a partner.
    * `initiator` determines which peer creates the WebRTC offer.
    */
-  socket.on('start', async ({ initiator }) => {
+  socket.on('start', async ({ initiator, partnerProfile }) => {
     setState('connected', 'Connecting…', 'warn');
+    if (typeof renderPartnerProfile === 'function') renderPartnerProfile(partnerProfile);
     await WebRTC.createPeer(localStream, socket, initiator, onRtcStateChange);
   });
 
@@ -224,7 +273,15 @@ $('start').onclick = async () => {
     setStatus('Camera blocked: ' + err.name, 'err');
     return;
   }
-  $('local').srcObject = localStream;
+  const localVideo = $('local');
+  localVideo.srcObject = localStream;
+  localVideo.onloadedmetadata = () => {
+    if (localVideo.videoWidth && localVideo.videoHeight) {
+      const ratio = localVideo.videoWidth / localVideo.videoHeight;
+      const card = $('local-card');
+      if (card) card.style.aspectRatio = ratio.toString();
+    }
+  };
   $('local-overlay').style.display = 'none'; // lift the overlay off the live feed
   setState('idle', 'Camera on — click Find Stranger to begin', 'warn');
 };
@@ -235,7 +292,9 @@ $('start').onclick = async () => {
  */
 $('find').onclick = () => {
   if (!socket || !socket.connected) return;
-  socket.emit('find-stranger');
+  // Attach profile data so the server can use it for future matchmaking filters
+  const profileData = Profile.get() ?? {};
+  socket.emit('find-stranger', profileData);
   // Optimistically update status while awaiting server echo
   setStatus('Entering queue…', 'warn');
 };
@@ -248,7 +307,8 @@ $('next').onclick = () => {
   if (!socket || !socket.connected) return;
   WebRTC.closePeer();
   socket.emit('leave-room');
-  socket.emit('find-stranger');
+  const profileData = Profile.get() ?? {};
+  socket.emit('find-stranger', profileData);
   setStatus('Finding next stranger…', 'warn');
 };
 
@@ -277,6 +337,175 @@ $('logout').onclick = async () => {
   await Auth.signOut();
 };
 
+// Edit Profile button (in header) — opens modal pre-filled with existing data
+const editProfileBtn = $('edit-profile-btn');
+if (editProfileBtn) {
+  editProfileBtn.addEventListener('click', () => {
+    const session = Auth.getSession();
+    if (session) ProfileUI.open(session, Profile.get(), _onProfileSaved);
+  });
+}
+
+// ── Partner Profile UI ────────────────────────────────────────────────────
+
+const ACTIVITIES_MAP = {
+  gaming: { label: 'Gaming', emoji: '🎮' },
+  fitness: { label: 'Fitness', emoji: '💪' },
+  movies: { label: 'Movies', emoji: '🎬' },
+  anime: { label: 'Anime', emoji: '⛩️' },
+  tech: { label: 'Tech', emoji: '💻' },
+  travel: { label: 'Travel', emoji: '✈️' },
+  music: { label: 'Music', emoji: '🎵' },
+  art: { label: 'Art', emoji: '🎨' },
+  cooking: { label: 'Cooking', emoji: '🍳' },
+  sports: { label: 'Sports', emoji: '⚽' },
+  books: { label: 'Books', emoji: '📚' },
+  photography: { label: 'Photography', emoji: '📸' }
+};
+
+function renderPartnerProfile(p) {
+  if (!p) p = {};
+  
+  // Basic info
+  const nameEl = $('partner-name');
+  if (nameEl) nameEl.textContent = p.nickname || 'Stranger';
+  
+  const remoteVidLabel = $('remote-vid-label');
+  if (remoteVidLabel) remoteVidLabel.textContent = p.nickname || 'Stranger';
+  
+  const demoParts = [];
+  if (p.age) demoParts.push(p.age);
+  if (p.gender) demoParts.push(p.gender.charAt(0).toUpperCase() + p.gender.slice(1));
+  const demoEl = $('partner-demographics');
+  if (demoEl) demoEl.textContent = demoParts.length > 0 ? demoParts.join(' • ') : 'Unknown';
+
+  // Avatar
+  const avatarImg = $('partner-avatar');
+  const avatarFallback = $('partner-avatar-fallback');
+  if (avatarImg && avatarFallback) {
+    if (p.profile_picture) {
+      avatarImg.src = p.profile_picture;
+      avatarImg.style.display = 'block';
+      avatarFallback.style.display = 'none';
+    } else {
+      avatarImg.src = '';
+      avatarImg.style.display = 'none';
+      avatarFallback.style.display = 'flex';
+    }
+  }
+
+  // Activities
+  const grid = $('partner-activities');
+  if (grid) {
+    grid.innerHTML = '';
+    if (Array.isArray(p.activities)) {
+      p.activities.forEach(id => {
+        const act = ACTIVITIES_MAP[id];
+        if (!act) return;
+        const btn = document.createElement('div');
+        btn.className = 'activity-pill active';
+        btn.innerHTML = `<span class="pill-emoji">${act.emoji}</span><span class="pill-label">${act.label}</span>`;
+        grid.appendChild(btn);
+      });
+    }
+  }
+
+  // Songs
+  const songList = $('partner-songs');
+  if (songList) {
+    songList.innerHTML = '';
+    if (Array.isArray(p.top_songs)) {
+      const songs = p.top_songs
+        .slice(0, 5)
+        .filter(Boolean)
+        .map(item => (typeof item === 'object' ? item : { title: String(item), artist: '', cover: '' }));
+        
+      songs.forEach((song, idx) => {
+        const row = document.createElement('div');
+        row.className = 'song-row-card';
+        row.style.animationDelay = `${idx * 35}ms`;
+
+        const num = document.createElement('span');
+        num.className = 'song-row-num';
+        num.textContent = idx + 1;
+
+        const img = document.createElement('img');
+        img.className = 'song-row-art';
+        img.src = song.cover || '';
+        img.alt = song.title || '';
+        img.width = 42;
+        img.height = 42;
+
+        const info = document.createElement('div');
+        info.className = 'song-row-info';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'song-row-title';
+        titleEl.textContent = song.title || '';
+
+        const artistEl = document.createElement('div');
+        artistEl.className = 'song-row-artist';
+        artistEl.textContent = song.artist || '';
+
+        info.appendChild(titleEl);
+        info.appendChild(artistEl);
+        row.appendChild(num);
+        row.appendChild(img);
+        row.appendChild(info);
+        songList.appendChild(row);
+      });
+    }
+  }
+}
+
+function resetPartnerProfile() {
+  const nameEl = $('partner-name');
+  if (nameEl) nameEl.textContent = 'Finding a new match...';
+  
+  const remoteVidLabel = $('remote-vid-label');
+  if (remoteVidLabel) remoteVidLabel.textContent = 'Stranger';
+  const demoEl = $('partner-demographics');
+  if (demoEl) demoEl.textContent = '';
+  const avatarImg = $('partner-avatar');
+  if (avatarImg) avatarImg.style.display = 'none';
+  const avatarFallback = $('partner-avatar-fallback');
+  if (avatarFallback) avatarFallback.style.display = 'flex';
+  const grid = $('partner-activities');
+  if (grid) grid.innerHTML = '';
+  const songList = $('partner-songs');
+  if (songList) songList.innerHTML = '';
+}
+
+// ── Partner Profile Hover Logic ───────────────────────────────────────────
+const videoGridNode = $('video-grid');
+const profileTriggerBtn = $('partner-profile-btn');
+const profilePanelNode = $('partner-profile-panel');
+
+let profileHoverTimeout;
+function setProfileHover(active) {
+  clearTimeout(profileHoverTimeout);
+  if (active) {
+    videoGridNode?.classList.add('is-active');
+  } else {
+    profileHoverTimeout = setTimeout(() => {
+      videoGridNode?.classList.remove('is-active');
+    }, 150);
+  }
+}
+
+if (profileTriggerBtn) {
+  profileTriggerBtn.addEventListener('mouseenter', () => setProfileHover(true));
+  profileTriggerBtn.addEventListener('mouseleave', () => setProfileHover(false));
+  // Allow toggling on click for touch devices
+  profileTriggerBtn.addEventListener('click', () => {
+    videoGridNode?.classList.toggle('is-active');
+  });
+}
+if (profilePanelNode) {
+  profilePanelNode.addEventListener('mouseenter', () => setProfileHover(true));
+  profilePanelNode.addEventListener('mouseleave', () => setProfileHover(false));
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────
 
 /**
@@ -287,6 +516,21 @@ $('logout').onclick = async () => {
 async function bootstrap() {
   Auth.onSessionChange(renderAuth);
   await Auth.init();
+
+  // Wire the gate-screen "Preview profile setup" button.
+  const previewBtn = $('gate-preview-profile');
+  if (previewBtn) {
+    previewBtn.addEventListener('click', () => {
+      ProfileUI.open(null, null, null);
+    });
+  }
 }
+
+// Expose a console helper for quick testing:
+// Open your browser DevTools and type: showProfileModal()
+window.showProfileModal = () => {
+  const session = Auth.getSession();
+  ProfileUI.open(session, Profile.get(), _onProfileSaved);
+};
 
 bootstrap();

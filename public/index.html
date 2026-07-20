@@ -47,6 +47,11 @@
       </button>
 
       <p class="gate-legal">By continuing you agree to be matched with strangers at random. Be kind.</p>
+
+      <!-- Preview button — lets you see the profile setup modal without signing in -->
+      <button type="button" id="gate-preview-profile" class="gate-preview-btn">
+        Preview profile setup ↗
+      </button>
     </div>
   </div>
 
@@ -72,6 +77,13 @@
       <!-- JS: $('account').style.display = 'none' | 'flex' -->
       <div id="account" class="header-account" style="display:none">
         <span id="who" class="account-email"></span>
+        <button id="edit-profile-btn" class="btn btn-ghost btn-icon" title="Edit profile" aria-label="Edit profile">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          Profile
+        </button>
         <button id="logout" class="btn btn-ghost">
           Sign out
         </button>
@@ -79,8 +91,8 @@
     </header>
 
     <!-- ── Video Grid ───────────────────────────────────────── -->
-    <main class="video-grid" aria-label="Video streams">
-
+    <main id="video-grid" class="video-grid" aria-label="Video streams">
+      
       <!-- Local video -->
       <div class="vid-card" id="local-card">
         <video id="local" autoplay playsinline muted></video>
@@ -96,20 +108,64 @@
         <div class="vid-label">You</div>
       </div>
 
-      <!-- Remote video -->
-      <div class="vid-card" id="remote-wrap">
-        <video id="remote" autoplay playsinline></video>
-        <!-- JS toggles display:flex / display:none -->
-        <div id="remote-placeholder" class="vid-placeholder">
-          <div class="placeholder-icon" aria-hidden="true">
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="8" r="4"/>
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-            </svg>
+      <!-- Remote Column -->
+      <div class="remote-column">
+        <!-- Remote video -->
+        <div class="vid-card" id="remote-wrap">
+          <video id="remote" autoplay playsinline></video>
+          <!-- JS toggles display:flex / display:none -->
+          <div id="remote-placeholder" class="vid-placeholder">
+            <div class="placeholder-icon" aria-hidden="true">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </div>
+            <span id="placeholder-text" class="placeholder-label">Waiting for stranger…</span>
           </div>
-          <span id="placeholder-text" class="placeholder-label">Waiting for stranger…</span>
+          <div id="remote-vid-label" class="vid-label">Stranger</div>
         </div>
-        <div class="vid-label">Stranger</div>
+      </div>
+
+      <!-- Far-Right Partner Profile Panel -->
+      <div id="partner-profile-panel" class="partner-profile-panel">
+        <!-- Header: Avatar + Demographics -->
+        <div class="partner-header">
+          <div class="partner-avatar-wrap">
+            <img id="partner-avatar" class="partner-avatar" src="" alt="Stranger" style="display:none">
+            <div id="partner-avatar-fallback" class="partner-avatar-fallback">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+          </div>
+          <div class="partner-info">
+            <div id="partner-name" class="partner-name">Stranger</div>
+            <div id="partner-demographics" class="partner-demographics"></div>
+          </div>
+        </div>
+
+        <!-- Activities Grid -->
+        <div class="partner-section">
+          <div class="partner-section-title">Interests</div>
+          <div id="partner-activities" class="activity-grid partner-activity-grid"></div>
+        </div>
+
+        <!-- Top Songs -->
+        <div class="partner-section">
+          <div class="partner-section-title">Top Songs</div>
+          <div id="partner-songs" class="song-selected-list partner-song-list"></div>
+        </div>
+      </div>
+
+      <!-- Stationary Partner Profile Trigger Button -->
+      <div id="partner-profile-container" class="partner-profile-container" style="display:none">
+        <button id="partner-profile-btn" class="partner-profile-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          Stranger's Profile
+        </button>
       </div>
 
     </main>
@@ -170,13 +226,141 @@
 
   </div><!-- /#app -->
 
+  <!-- ══════════════════════════════════════════════════════════
+       PROFILE SETUP MODAL
+       JS: ProfileUI.open() / ProfileUI.close()
+       ══════════════════════════════════════════════════════════ -->
+  <div id="profile-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+
+    <!-- Backdrop (click = close if profile already complete) -->
+    <div class="profile-backdrop"></div>
+
+    <!-- Scrollable sheet -->
+    <div class="profile-sheet" tabindex="-1">
+
+      <!-- ── Header ─────────────────────────────────────────── -->
+      <div class="prof-header">
+        <h2 id="profile-modal-title" class="prof-title">Set Up Your Profile</h2>
+        <p class="prof-subtitle">Tell people a bit about yourself before jumping in.</p>
+      </div>
+
+      <!-- ── Avatar ─────────────────────────────────────────── -->
+      <div class="prof-avatar-section">
+        <div id="avatar-circle" class="avatar-circle" role="button" tabindex="0"
+             aria-label="Upload profile picture" title="Click to upload a photo">
+          <!-- Fallback SVG shown until an image is selected -->
+          <div id="avatar-placeholder" class="avatar-placeholder" aria-hidden="true">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </div>
+          <!-- Preview fills the circle once a file is chosen -->
+          <img id="avatar-preview" class="avatar-preview" src="" alt="Your profile photo" style="display:none">
+          <!-- Camera overlay shown on hover -->
+          <div class="avatar-camera-overlay" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <!-- Hidden native file picker -->
+          <input id="avatar-file-input" type="file" accept="image/*" aria-hidden="true"
+                 style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
+        </div>
+        <p class="avatar-hint">Click to upload a photo</p>
+      </div>
+
+      <!-- ── Nickname ───────────────────────────────────────── -->
+      <div class="prof-field prof-field--full">
+        <label class="prof-label" for="prof-nickname">
+          Nickname <span class="prof-label-hint">(optional — shown to strangers)</span>
+        </label>
+        <input id="prof-nickname" class="prof-input" type="text"
+               maxlength="32" placeholder="e.g. alex_vibes" autocomplete="off">
+      </div>
+
+      <!-- ── Age + Gender (inline row) ──────────────────────── -->
+      <div class="prof-row">
+        <div class="prof-field">
+          <label class="prof-label" for="prof-age">Age</label>
+          <input id="prof-age" class="prof-input" type="number" min="13" max="120"
+                 placeholder="e.g. 24" autocomplete="off">
+        </div>
+        <div class="prof-field">
+          <label class="prof-label" for="prof-gender">Gender</label>
+          <select id="prof-gender" class="prof-input prof-select">
+            <option value="" disabled selected>Select…</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="non-binary">Non-binary</option>
+            <option value="prefer-not-to-say">Prefer not to say</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ── Activities ──────────────────────────────────────── -->
+      <div class="prof-section">
+        <label class="prof-label">Interests <span class="prof-label-hint">(pick your favourites)</span></label>
+        <!-- Pills injected by profile-ui.js -->
+        <div id="activity-grid" class="activity-grid" role="group" aria-label="Interests"></div>
+      </div>
+
+      <!-- ── Top 5 Songs ─────────────────────────────────────── -->
+      <div class="prof-section">
+        <label class="prof-label" for="song-tag-input">
+          Top 5 Songs <span class="prof-label-hint">(optional — search &amp; select)</span>
+        </label>
+        <!-- .song-search-wrap gives the dropdown its positioning anchor -->
+        <div class="song-search-wrap">
+          <!-- Search bar: icon + input only (no inline pills) -->
+          <div id="song-tag-box" class="song-tag-box">
+            <svg class="song-search-icon" width="14" height="14" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input id="song-tag-input" class="song-tag-input"
+                   type="text" placeholder="Search for a song…"
+                   maxlength="80" autocomplete="off"
+                   aria-autocomplete="list" aria-controls="song-dropdown">
+          </div>
+          <!-- Autocomplete dropdown -->
+          <div id="song-dropdown" class="song-dropdown"
+               role="listbox" aria-label="Song search results"
+               style="display:none"></div>
+        </div>
+        <!-- Vertical selected track list — rows injected by profile-ui.js -->
+        <div id="song-selected-list" class="song-selected-list"
+             role="list" aria-label="Selected songs"></div>
+        <p class="song-tag-counter">
+          <span id="song-tag-count">0</span> / 5 songs added
+        </p>
+      </div>
+
+      <!-- ── Error banner ────────────────────────────────────── -->
+      <div id="prof-error" class="prof-error" style="display:none" role="alert"></div>
+
+      <!-- ── Save button ─────────────────────────────────────── -->
+      <button id="prof-save-btn" class="btn btn-primary prof-save-btn">
+        Save Profile
+      </button>
+
+    </div><!-- /.profile-sheet -->
+  </div><!-- /#profile-modal -->
+
   <!-- Supabase (self-hosted, no external CDN) -->
   <script src="/vendor/supabase.js"></script>
   <!-- Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
-  <!-- App modules — load order: auth → webrtc → main -->
+  <!-- App modules — load order: auth → webrtc → profile → profile-ui → main -->
   <script src="/js/auth.js"></script>
   <script src="/js/webrtc.js"></script>
+  <script src="/js/profile.js"></script>
+  <script src="/js/profile-ui.js"></script>
   <script src="/js/main.js"></script>
 
 </body>

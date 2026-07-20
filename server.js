@@ -94,7 +94,11 @@ io.on('connection', (socket) => {
    *   • If a live partner is found  → create a UUID room, join both, start WebRTC.
    *   • If no partner is available  → push this socket and emit "searching".
    */
-  socket.on('find-stranger', () => {
+  socket.on('find-stranger', (profile) => {
+    // Store the profile data for future matchmaking filter use.
+    // The payload is optional (older clients omit it) — default to empty object.
+    socket.data.profile = (profile && typeof profile === 'object') ? profile : {};
+
     // Idempotency: ensure we're not already in the queue
     removeFromQueue(socket.id);
 
@@ -126,8 +130,8 @@ io.on('connection', (socket) => {
 
       // The incoming socket (the "new arrival") creates the WebRTC offer.
       // The waiting socket answers.
-      socket.emit('start',        { initiator: true  });
-      partnerSocket.emit('start', { initiator: false });
+      socket.emit('start',        { initiator: true,  partnerProfile: partnerSocket.data.profile || {} });
+      partnerSocket.emit('start', { initiator: false, partnerProfile: socket.data.profile || {} });
 
       matched = true;
     }

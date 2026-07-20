@@ -1,9 +1,9 @@
 require('dotenv').config();
-const express        = require('express');
-const path           = require('path');
-const http           = require('http');
+const express = require('express');
+const path = require('path');
+const http = require('http');
 const { randomUUID } = require('crypto');
-const { Server }     = require('socket.io');
+const { Server } = require('socket.io');
 const { createClient } = require('@supabase/supabase-js');
 
 // ── Supabase admin client (server-side only, never exposed to browsers) ──
@@ -12,9 +12,9 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY,
 );
 
-const app    = express();
+const app = express();
 const server = http.createServer(app);
-const io     = new Server(server);
+const io = new Server(server);
 
 // ── Matchmaking queue ────────────────────────────────────────────────────
 //
@@ -43,7 +43,7 @@ function removeFromQueue(socketId) {
  */
 app.get('/config', (_req, res) => {
   res.json({
-    url:     process.env.SUPABASE_URL,
+    url: process.env.SUPABASE_URL,
     anonKey: process.env.SUPABASE_ANON_KEY,
   });
 });
@@ -109,28 +109,78 @@ io.on('connection', (socket) => {
       socket.data.room = null;
     }
 
-    // Drain the queue, skipping entries whose socket has since disconnected
-    let matched = false;
-    while (waitingQueue.length > 0 && !matched) {
-      const partnerId     = waitingQueue.shift();
-      const partnerSocket = io.sockets.sockets.get(partnerId);
-
-      if (!partnerSocket || !partnerSocket.connected) {
-        // Stale entry — discard and try the next one
-        continue;
+    // ── Matchmaking Algorithm ──────────────────────────────────────────
+    // Clean out stale sockets first
+    for (let i = waitingQueue.length - 1; i >= 0; i--) {
+      const s = io.sockets.sockets.get(waitingQueue[i]);
+      if (!s || !s.connected) {
+        waitingQueue.splice(i, 1);
       }
+    }
+
+    let matched = false;
+
+    if (waitingQueue.length > 0) {
+      let partnerIndex = -1;
+      const isRandom = Math.random() < 0.3;
+
+      if (isRandom) {
+        partnerIndex = 0;
+      } else {
+        const myProfile = socket.data.profile || {};
+        const myInterests = Array.isArray(myProfile.activities) ? myProfile.activities : [];
+        const mySongs = Array.isArray(myProfile.top_songs) ? myProfile.top_songs : [];
+
+        let bestScore = 0;
+        let bestIndex = -1;
+
+        waitingQueue.forEach((id, index) => {
+          const s = io.sockets.sockets.get(id);
+          const theirProfile = s.data.profile || {};
+          const theirInterests = Array.isArray(theirProfile.activities) ? theirProfile.activities : [];
+          const theirSongs = Array.isArray(theirProfile.top_songs) ? theirProfile.top_songs : [];
+
+          let score = 0;
+          // Score Interests
+          theirInterests.forEach(interest => {
+            if (myInterests.includes(interest)) score += 1;
+          });
+
+          // Score Artists
+          theirSongs.forEach(theirSong => {
+            if (theirSong && theirSong.artist) {
+              const hasArtist = mySongs.some(mySong => mySong && mySong.artist === theirSong.artist);
+              if (hasArtist) score += 1;
+            }
+          });
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestIndex = index;
+          }
+        });
+
+        if (bestIndex !== -1) {
+          partnerIndex = bestIndex;
+        } else {
+          partnerIndex = 0; // Fallback
+        }
+      }
+
+      const partnerId = waitingQueue[partnerIndex];
+      waitingQueue.splice(partnerIndex, 1);
+      const partnerSocket = io.sockets.sockets.get(partnerId);
 
       // ── Successful match ───────────────────────────────────────────────
       const room = randomUUID();
 
       socket.join(room);
       partnerSocket.join(room);
-      socket.data.room        = room;
+      socket.data.room = room;
       partnerSocket.data.room = room;
 
       // The incoming socket (the "new arrival") creates the WebRTC offer.
-      // The waiting socket answers.
-      socket.emit('start',        { initiator: true,  partnerProfile: partnerSocket.data.profile || {} });
+      socket.emit('start', { initiator: true, partnerProfile: partnerSocket.data.profile || {} });
       partnerSocket.emit('start', { initiator: false, partnerProfile: socket.data.profile || {} });
 
       matched = true;
@@ -164,8 +214,8 @@ io.on('connection', (socket) => {
   // ── WebRTC signaling relay ─────────────────────────────────────────────
   // Pure relay — payloads are forwarded verbatim. All media is peer-to-peer.
 
-  socket.on('offer',     (d) => socket.to(socket.data.room).emit('offer',     d));
-  socket.on('answer',    (d) => socket.to(socket.data.room).emit('answer',    d));
+  socket.on('offer', (d) => socket.to(socket.data.room).emit('offer', d));
+  socket.on('answer', (d) => socket.to(socket.data.room).emit('answer', d));
   socket.on('candidate', (d) => socket.to(socket.data.room).emit('candidate', d));
 
   // ── Disconnect ────────────────────────────────────────────────────────

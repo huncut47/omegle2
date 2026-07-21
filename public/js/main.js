@@ -105,13 +105,13 @@ function setState(state, statusText, statusCls) {
     if (typeof resetPartnerProfile === 'function') resetPartnerProfile();
   }
 
-  // ── Chat Overlay Visibility ────────────────────────────────────────────
-  const chatOverlay = $('chat-overlay');
-  if (chatOverlay) {
+  // ── Chat Container Visibility ────────────────────────────────────────────
+  const chatContainer = $('chat-container');
+  if (chatContainer) {
     if (state === 'connected') {
-      chatOverlay.style.display = 'flex';
+      chatContainer.style.display = 'flex';
     } else {
-      chatOverlay.style.display = 'none';
+      chatContainer.style.display = 'none';
       const chatMessages = $('chat-messages');
       if (chatMessages) chatMessages.innerHTML = ''; // Clear chat on disconnect
     }
@@ -655,35 +655,59 @@ window.showProfileModal = () => {
 
 bootstrap();
 
-// ── Chat Overlay Focus Logic ──────────────────────────────────────────────
+// ── Chat Logic ──────────────────────────────────────────────────────────────
+const chatContainerDom = document.getElementById('chat-container');
 const chatInputDom = document.getElementById('chat-input');
 const chatMessagesDom = document.getElementById('chat-messages');
-const chatOverlayEl = document.getElementById('chat-overlay');
 
-if (!chatInputDom || !chatMessagesDom) {
-  console.error("CRITICAL DOM ERROR: #chat-input or #chat-messages is completely missing from the HTML! Scripts might be loading before the DOM elements.");
-}
+if (chatContainerDom && chatInputDom && chatMessagesDom) {
+  // Expand chat when clicking anywhere inside the chat container
+  document.addEventListener('click', (e) => {
+    if (chatContainerDom.contains(e.target)) {
+      chatContainerDom.classList.add('active');
+    } else {
+      chatContainerDom.classList.remove('active');
+    }
+  });
 
-if (chatInputDom && chatOverlayEl) {
-  chatInputDom.addEventListener('focus', () => {
-    chatOverlayEl.classList.add('active');
-  });
-  chatInputDom.addEventListener('blur', () => {
-    chatOverlayEl.classList.remove('active');
-  });
+  let chatCooldownTimeout = null;
+  let chatCooldownInterval = null;
+  let isChatCooldown = false;
 
   chatInputDom.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      
+      if (isChatCooldown) return;
+      
       const text = chatInputDom.value.trim();
       if (!text) return;
 
-      console.log("Sending message:", text);
       chatInputDom.value = '';
       if (socket && socket.connected) {
         socket.emit('chat-message', text);
       }
       appendChatMessage(text, true);
+      
+      // Start cooldown
+      isChatCooldown = true;
+      chatInputDom.classList.add('cooldown');
+      let secondsLeft = 3;
+      chatInputDom.placeholder = `Wait ${secondsLeft}s...`;
+
+      chatCooldownInterval = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft > 0) {
+          chatInputDom.placeholder = `Wait ${secondsLeft}s...`;
+        }
+      }, 1000);
+
+      chatCooldownTimeout = setTimeout(() => {
+        clearInterval(chatCooldownInterval);
+        isChatCooldown = false;
+        chatInputDom.classList.remove('cooldown');
+        chatInputDom.placeholder = 'Type a message...';
+      }, 3000);
     }
   });
 }

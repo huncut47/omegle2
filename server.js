@@ -217,6 +217,7 @@ io.on('connection', (socket) => {
   socket.on('offer', (d) => socket.to(socket.data.room).emit('offer', d));
   socket.on('answer', (d) => socket.to(socket.data.room).emit('answer', d));
   socket.on('candidate', (d) => socket.to(socket.data.room).emit('candidate', d));
+  socket.on('chat-message', (d) => socket.to(socket.data.room).emit('chat-message', d));
 
   // ── Disconnect ────────────────────────────────────────────────────────
 

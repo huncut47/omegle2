@@ -17,52 +17,62 @@
 /* ── 1. Design Tokens ──────────────────────────────────────────────── */
 :root {
   /* ── Palette ── */
-  --bg:         #07090f;   /* deepest background          */
-  --surface-0:  #0c0f1a;   /* page canvas                 */
-  --surface-1:  #10141f;   /* base cards                  */
-  --surface-2:  #161b2c;   /* elevated panels             */
-  --surface-3:  #1d2338;   /* inputs, pills               */
-  --surface-4:  #252c42;   /* hovered surfaces            */
+  --bg: #07090f;
+  /* deepest background          */
+  --surface-0: #0c0f1a;
+  /* page canvas                 */
+  --surface-1: #10141f;
+  /* base cards                  */
+  --surface-2: #161b2c;
+  /* elevated panels             */
+  --surface-3: #1d2338;
+  /* inputs, pills               */
+  --surface-4: #252c42;
+  /* hovered surfaces            */
 
-  --border:       #252c44;
-  --border-soft:  #1e2438;
+  --border: #252c44;
+  --border-soft: #1e2438;
   --border-hover: #374060;
-  --border-glow:  rgba(91, 110, 245, 0.45);
+  --border-glow: rgba(91, 110, 245, 0.45);
 
   /* ── Text ── */
-  --text-1: #eef0fa;   /* headings, primary          */
-  --text-2: #9aa3cc;   /* body, secondary            */
-  --text-3: #56617e;   /* captions, placeholders     */
-  --text-4: #363d5a;   /* ultra-muted                */
+  --text-1: #eef0fa;
+  /* headings, primary          */
+  --text-2: #9aa3cc;
+  /* body, secondary            */
+  --text-3: #56617e;
+  /* captions, placeholders     */
+  --text-4: #363d5a;
+  /* ultra-muted                */
 
   /* ── Brand accent (indigo) ── */
-  --indigo:       #5c6ff5;
+  --indigo: #5c6ff5;
   --indigo-light: #7b8cf7;
-  --indigo-dim:   rgba(92, 111, 245, 0.14);
-  --indigo-glow:  rgba(92, 111, 245, 0.38);
+  --indigo-dim: rgba(92, 111, 245, 0.14);
+  --indigo-glow: rgba(92, 111, 245, 0.38);
 
   /* ── Semantic colors ── */
-  --green:        #10b981;
-  --green-dim:    rgba(16, 185, 129, 0.14);
-  --green-glow:   rgba(16, 185, 129, 0.35);
+  --green: #10b981;
+  --green-dim: rgba(16, 185, 129, 0.14);
+  --green-glow: rgba(16, 185, 129, 0.35);
 
-  --amber:        #f59e0b;
-  --amber-dim:    rgba(245, 158, 11, 0.14);
-  --amber-glow:   rgba(245, 158, 11, 0.32);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245, 158, 11, 0.14);
+  --amber-glow: rgba(245, 158, 11, 0.32);
 
-  --red:          #ef4444;
-  --red-dim:      rgba(239, 68, 68, 0.14);
-  --red-glow:     rgba(239, 68, 68, 0.30);
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, 0.14);
+  --red-glow: rgba(239, 68, 68, 0.30);
 
   /* ── Typography ── */
-  --font:  'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* ── Radius ── */
-  --r-xs:   5px;
-  --r-sm:   8px;
-  --r-md:  12px;
-  --r-lg:  16px;
-  --r-xl:  20px;
+  --r-xs: 5px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
   --r-2xl: 24px;
   --r-pill: 9999px;
 
@@ -72,20 +82,20 @@
     0 1px 4px rgba(0, 0, 0, 0.3);
   --shadow-md:
     0 4px 12px rgba(0, 0, 0, 0.55),
-    0 2px 4px  rgba(0, 0, 0, 0.35);
+    0 2px 4px rgba(0, 0, 0, 0.35);
   --shadow-lg:
     0 12px 40px rgba(0, 0, 0, 0.65),
-    0  4px 12px rgba(0, 0, 0, 0.4);
+    0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-inset:
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
   /* ── Motion ── */
-  --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-std:  cubic-bezier(0.4, 0, 0.2, 1);
-  --t-xs:  100ms var(--ease-std);
-  --t-sm:  180ms var(--ease-std);
-  --t-md:  260ms var(--ease-std);
-  --t-lg:  400ms var(--ease-out);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-std: cubic-bezier(0.4, 0, 0.2, 1);
+  --t-xs: 100ms var(--ease-std);
+  --t-sm: 180ms var(--ease-std);
+  --t-md: 260ms var(--ease-std);
+  --t-lg: 400ms var(--ease-out);
 }
 
 /* ── 2. Base Reset ─────────────────────────────────────────────────── */
@@ -135,7 +145,8 @@ body {
   inset: 0;
   z-index: 200;
   background: var(--bg);
-  background-image: inherit; /* share body ambient gradient */
+  background-image: inherit;
+  /* share body ambient gradient */
   /* centered layout achieved with inner card absolute positioning */
 }
 
@@ -165,12 +176,10 @@ body {
   position: absolute;
   inset: -1px;
   border-radius: calc(var(--r-2xl) + 1px);
-  background: linear-gradient(
-    145deg,
-    rgba(92, 111, 245, 0.55) 0%,
-    transparent  42%,
-    rgba(16, 185, 129, 0.25) 100%
-  );
+  background: linear-gradient(145deg,
+      rgba(92, 111, 245, 0.55) 0%,
+      transparent 42%,
+      rgba(16, 185, 129, 0.25) 100%);
   z-index: -1;
   pointer-events: none;
 }
@@ -263,8 +272,8 @@ body {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   transition:
     background var(--t-sm),
-    box-shadow  var(--t-sm),
-    transform   var(--t-sm);
+    box-shadow var(--t-sm),
+    transform var(--t-sm);
 }
 
 .btn-google:hover {
@@ -323,7 +332,8 @@ body {
   align-items: center;
   margin-right: 2px;
   color: var(--indigo-light);
-  transform: translateY(2px); /* optical alignment */
+  transform: translateY(2px);
+  /* optical alignment */
 }
 
 .brand-wordmark {
@@ -347,7 +357,9 @@ body {
 }
 
 @media (max-width: 480px) {
-  .brand-tagline { display: none; }
+  .brand-tagline {
+    display: none;
+  }
 }
 
 /* Account area (JS toggles display:'flex' when authed) */
@@ -369,7 +381,9 @@ body {
 }
 
 @media (max-width: 540px) {
-  .account-email { display: none; }
+  .account-email {
+    display: none;
+  }
 }
 
 /* ── 6. Video Grid ─────────────────────────────────────────────────── */
@@ -391,7 +405,8 @@ body {
 }
 
 #local-card {
-  flex: 1 1 0%; /* Absorb all shrinking space */
+  flex: 1 1 0%;
+  /* Absorb all shrinking space */
   min-width: 0;
   transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
@@ -402,13 +417,13 @@ body {
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
-  overflow: hidden;
   width: 100%;
   height: auto;
-  aspect-ratio: 16 / 9; /* Default fallback until JS overrides */
+  aspect-ratio: 16 / 9;
+  /* Default fallback until JS overrides */
   transition:
     border-color var(--t-md),
-    box-shadow   var(--t-md);
+    box-shadow var(--t-md);
 }
 
 /* Glow border when a stream is active (remote card when connected) */
@@ -419,13 +434,15 @@ body {
 /* Actual <video> element fills the tile */
 .vid-card video {
   position: absolute;
+  border-radius: inherit;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   background: #000;
-  transform: scaleX(-1); /* Mirror both video feeds */
+  transform: scaleX(-1);
+  /* Mirror both video feeds */
 }
 
 /* ── Camera-off local overlay ──
@@ -442,6 +459,7 @@ body {
   justify-content: center;
   gap: 12px;
   background: var(--surface-1);
+  border-radius: inherit;
   color: var(--text-4);
   pointer-events: none;
   /* Hidden once video is playing — the video covers this overlay */
@@ -466,6 +484,7 @@ body {
   justify-content: center;
   gap: 16px;
   background: var(--surface-1);
+  border-radius: inherit;
   transition: opacity var(--t-md);
 }
 
@@ -519,16 +538,18 @@ body {
 .controls-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 24px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(15, 20, 32, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: var(--r-xl);
-  box-shadow: var(--shadow-sm), var(--shadow-inset);
-  flex-shrink: 0;
-  margin-top: auto;
-  flex-wrap: wrap;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: max-content;
+  z-index: 100;
 }
 
 .status-section {
@@ -585,12 +606,12 @@ body {
   user-select: none;
   outline-offset: 3px;
   transition:
-    color        var(--t-sm),
-    background   var(--t-sm),
+    color var(--t-sm),
+    background var(--t-sm),
     border-color var(--t-sm),
-    box-shadow   var(--t-sm),
-    transform    var(--t-sm),
-    opacity      var(--t-sm);
+    box-shadow var(--t-sm),
+    transform var(--t-sm),
+    opacity var(--t-sm);
 }
 
 .btn svg {
@@ -702,14 +723,14 @@ body {
 
 /* The dot element — JS sets class: 'dot' | 'dot on' | 'dot warn' | 'dot err' */
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   flex-shrink: 0;
   background: var(--text-4);
   transition:
-    background  var(--t-md),
-    box-shadow  var(--t-md);
+    background var(--t-md),
+    box-shadow var(--t-md);
 }
 
 /* Connected — solid green with subtle halo */
@@ -736,24 +757,30 @@ body {
 
 /* Pulsing ring on the status dot when searching */
 @keyframes dot-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow:
-      0 0 0 0   rgba(245, 158, 11, 0.65),
-      0 0 8px   rgba(245, 158, 11, 0.35);
+      0 0 0 0 rgba(245, 158, 11, 0.65),
+      0 0 8px rgba(245, 158, 11, 0.35);
   }
+
   50% {
     box-shadow:
       0 0 0 7px rgba(245, 158, 11, 0),
-      0 0 0     rgba(245, 158, 11, 0);
+      0 0 0 rgba(245, 158, 11, 0);
   }
 }
 
 /* Pulsing icon in remote placeholder when searching */
 @keyframes icon-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(92, 111, 245, 0.4);
     background: var(--surface-3);
   }
+
   50% {
     box-shadow: 0 0 0 10px rgba(92, 111, 245, 0);
     background: rgba(92, 111, 245, 0.08);
@@ -764,24 +791,30 @@ body {
 
 /* Pulsing ring on the status dot when searching */
 @keyframes dot-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow:
-      0 0 0 0   rgba(245, 158, 11, 0.65),
-      0 0 8px   rgba(245, 158, 11, 0.35);
+      0 0 0 0 rgba(245, 158, 11, 0.65),
+      0 0 8px rgba(245, 158, 11, 0.35);
   }
+
   50% {
     box-shadow:
       0 0 0 7px rgba(245, 158, 11, 0),
-      0 0 0     rgba(245, 158, 11, 0);
+      0 0 0 rgba(245, 158, 11, 0);
   }
 }
 
 /* Pulsing icon in remote placeholder when searching */
 @keyframes icon-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(92, 111, 245, 0.4);
     background: var(--surface-3);
   }
+
   50% {
     box-shadow: 0 0 0 10px rgba(92, 111, 245, 0);
     background: rgba(92, 111, 245, 0.08);
@@ -794,6 +827,7 @@ body {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -806,6 +840,7 @@ body {
     opacity: 0;
     transform: translateY(32px) scale(0.97);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -813,13 +848,21 @@ body {
 }
 
 /* Page-in animation for the app shell */
-#app > * {
+#app>* {
   animation: fade-up var(--t-lg) var(--ease-out) both;
 }
 
-#app > *:nth-child(1) { animation-delay:  0ms; }
-#app > *:nth-child(2) { animation-delay: 60ms; }
-#app > *:nth-child(3) { animation-delay: 120ms; }
+#app>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+#app>*:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+#app>*:nth-child(3) {
+  animation-delay: 120ms;
+}
 
 /* ── 12. Green Room Lobby ────────────────────────────────────── */
 
@@ -832,7 +875,8 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px 16px;
-  background: #090d16; /* Obscure underlying UI fully */
+  background: #090d16;
+  /* Obscure underlying UI fully */
   /* Start invisible; JS adds .is-open to trigger transition */
   opacity: 0;
   pointer-events: none;
@@ -848,7 +892,8 @@ body {
 /* ── Blurred dark background video ── */
 #green-room-bg {
   position: absolute;
-  inset: -10%; /* Oversize slightly to hide blurred edges */
+  inset: -10%;
+  /* Oversize slightly to hide blurred edges */
   width: 120%;
   height: 120%;
   object-fit: cover;
@@ -859,13 +904,16 @@ body {
 
 /* ── Glassmorphic card ── */
 .green-room-card {
-  position: relative;         /* above background */
+  position: relative;
+  /* above background */
   z-index: 1;
   width: min(850px, 100%);
   max-height: calc(100dvh - 40px);
-  overflow: hidden; /* Contain scrollbar inside rounded corners */
+  overflow: hidden;
+  /* Contain scrollbar inside rounded corners */
 
-  background: rgba(13, 16, 27, 0.65); /* Semi-transparent base */
+  background: rgba(13, 16, 27, 0.65);
+  /* Semi-transparent base */
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -892,6 +940,7 @@ body {
 .gr-header {
   text-align: center;
 }
+
 .gr-title {
   font-size: 26px;
   font-weight: 700;
@@ -899,6 +948,7 @@ body {
   letter-spacing: -0.3px;
   margin-bottom: 6px;
 }
+
 .gr-subtitle {
   font-size: 15px;
   color: var(--text-2);
@@ -911,6 +961,7 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 32px;
 }
+
 @media (max-width: 768px) {
   .gr-body {
     grid-template-columns: 1fr;
@@ -923,6 +974,7 @@ body {
   flex-direction: column;
   gap: 16px;
 }
+
 .gr-preview-wrap {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -932,13 +984,16 @@ body {
   background: var(--surface-1);
   box-shadow: var(--shadow-sm);
 }
+
 #green-room-preview {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scaleX(-1); /* mirror */
+  transform: scaleX(-1);
+  /* mirror */
   display: block;
 }
+
 .gr-device-selects {
   display: flex;
   flex-direction: column;
@@ -980,14 +1035,14 @@ body {
   cursor: pointer;
   transition:
     border-color var(--t-sm),
-    box-shadow   var(--t-sm);
+    box-shadow var(--t-sm);
 }
 
 .avatar-circle:hover {
   border-color: var(--indigo);
   box-shadow:
     0 0 0 4px var(--indigo-dim),
-    0 0 18px  var(--indigo-glow);
+    0 0 18px var(--indigo-glow);
 }
 
 /* Default person icon inside the circle */
@@ -1066,6 +1121,7 @@ body {
   border-radius: var(--r-md);
   margin-bottom: 16px;
 }
+
 .selected-interests-zone:empty {
   display: none;
 }
@@ -1169,8 +1225,8 @@ body {
   outline: none;
   transition:
     border-color var(--t-sm),
-    box-shadow   var(--t-sm),
-    background   var(--t-sm);
+    box-shadow var(--t-sm),
+    background var(--t-sm);
   /* Remove browser number spinners */
   -moz-appearance: textfield;
   appearance: textfield;
@@ -1234,11 +1290,11 @@ body {
   user-select: none;
   -webkit-user-select: none;
   transition:
-    background    var(--t-sm),
-    border-color  var(--t-sm),
-    color         var(--t-sm),
-    box-shadow    var(--t-sm),
-    transform     var(--t-sm);
+    background var(--t-sm),
+    border-color var(--t-sm),
+    color var(--t-sm),
+    box-shadow var(--t-sm),
+    transform var(--t-sm);
 }
 
 .activity-pill:hover {
@@ -1255,7 +1311,7 @@ body {
   color: var(--indigo-light);
   box-shadow:
     0 0 0 3px var(--indigo-dim),
-    0 0 12px  var(--indigo-glow);
+    0 0 12px var(--indigo-glow);
 }
 
 .activity-pill.active:hover {
@@ -1284,8 +1340,8 @@ body {
   border-radius: var(--r-sm);
   transition:
     border-color var(--t-sm),
-    box-shadow   var(--t-sm),
-    background   var(--t-sm);
+    box-shadow var(--t-sm),
+    background var(--t-sm);
 }
 
 .song-tag-box:focus-within {
@@ -1349,7 +1405,7 @@ body {
   border-radius: var(--r-md);
   transition:
     border-color var(--t-sm),
-    background   var(--t-sm);
+    background var(--t-sm);
   animation: fade-up 220ms var(--ease-out) both;
 }
 
@@ -1419,9 +1475,9 @@ body {
   color: var(--text-4);
   cursor: pointer;
   transition:
-    background    var(--t-xs),
-    border-color  var(--t-xs),
-    color         var(--t-xs);
+    background var(--t-xs),
+    border-color var(--t-xs),
+    color var(--t-xs);
 }
 
 .song-row-remove:hover {
@@ -1470,8 +1526,15 @@ body {
 }
 
 @keyframes dropdown-drop {
-  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Each result row */
@@ -1576,7 +1639,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 0 0 calc((min(100vw, 1100px) - 50px) / 2); /* ALWAYS rigid 50%! */
+  flex: 0 0 calc((min(100vw, 1100px) - 50px) / 2);
+  /* ALWAYS rigid 50%! */
   min-width: 0;
   transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
@@ -1584,8 +1648,10 @@ body {
 /* ── Partner Profile Trigger & Expansion ─────────────────────────────── */
 .partner-profile-container {
   position: absolute;
-  bottom: 15px;
-  left: calc(50% + 7px + 15px); /* Anchored to stranger's video bottom-left */
+  bottom: -40px;
+  left: 0;
+  transform: none !important;
+  margin: 0 !important;
   z-index: 10;
 }
 
@@ -1605,29 +1671,32 @@ body {
   transition: all var(--t-sm);
 }
 
-.partner-profile-btn:hover {
+.partner-profile-btn:hover,
+.partner-profile-btn:focus,
+.partner-profile-btn:active {
   background: var(--surface-4);
   color: var(--text-1);
+  transform: none !important;
 }
 
 .partner-profile-panel {
   flex-shrink: 0;
   width: 0px;
-  background: var(--surface-2); 
+  background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
   display: flex;
   flex-direction: column;
   gap: 16px;
   box-shadow: var(--shadow-sm), var(--shadow-inset);
-  
+
   /* Hidden by default (slide-out style) */
   opacity: 0;
   overflow: hidden;
   padding: 0;
   border-width: 0;
   transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-  
+
   position: absolute;
   top: 0;
   right: 0;
@@ -1648,13 +1717,16 @@ body {
 .partner-profile-panel::-webkit-scrollbar {
   width: 6px;
 }
+
 .partner-profile-panel::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .partner-profile-panel::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: var(--r-pill);
 }
+
 .partner-profile-panel::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
@@ -1739,6 +1811,7 @@ body {
   border-color: transparent;
   cursor: default;
 }
+
 .partner-activity-grid .activity-pill:hover {
   transform: none;
   border-color: transparent;
@@ -1873,4 +1946,100 @@ body {
   .activity-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+
+/* -- Chat Overlay ------------------------------------------ */
+.chat-overlay {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 100;
+  width: 300px;
+  background: rgba(15, 20, 32, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px;
+  gap: 8px;
+  transition: max-height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  /* Default Idle State - accommodate input size and padding */
+  max-height: 70px;
+}
+
+/* Active State */
+.chat-overlay.active {
+  max-height: 300px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+}
+
+.chat-messages::-webkit-scrollbar {
+  display: none;
+}
+
+.chat-message {
+  padding: 8px 14px;
+  border-radius: 18px;
+  word-break: break-word;
+  white-space: pre-wrap;
+  max-width: 85%;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.chat-message.me {
+  align-self: flex-end;
+  background: rgba(74, 222, 128, 0.2);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-message.stranger {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-input-wrap {
+  display: block;
+}
+
+.chat-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  padding: 12px 16px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.chat-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.chat-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.activity-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
 }

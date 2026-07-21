@@ -33,7 +33,7 @@
 const $ = id => document.getElementById(id);
 
 // ── Module-level state ────────────────────────────────────────────────────
-let socket      = null;   // Persistent Socket.IO connection (lives for the auth session)
+let socket = null;   // Persistent Socket.IO connection (lives for the auth session)
 let localStream = null;   // MediaStream from getUserMedia
 
 // ── State machine ─────────────────────────────────────────────────────────
@@ -74,11 +74,11 @@ function setState(state, statusText, statusCls) {
 
   // ── Next / Skip button ───────────────────────────────────────────────
   // Visible only when in an active call.
-  $('next').style.display  = (state === 'connected')  ? '' : 'none';
+  $('next').style.display = (state === 'connected') ? '' : 'none';
 
   // ── Stop button ──────────────────────────────────────────────────────
   // Visible while searching (cancel) or connected (hang up).
-  $('stop').style.display  = (state === 'searching' || state === 'connected') ? '' : 'none';
+  $('stop').style.display = (state === 'searching' || state === 'connected') ? '' : 'none';
 
   // ── Remote placeholder overlay ───────────────────────────────────────
   const placeholder = $('remote-placeholder');
@@ -104,6 +104,18 @@ function setState(state, statusText, statusCls) {
     if (partnerContainer) partnerContainer.style.display = 'none';
     if (typeof resetPartnerProfile === 'function') resetPartnerProfile();
   }
+
+  // ── Chat Overlay Visibility ────────────────────────────────────────────
+  const chatOverlay = $('chat-overlay');
+  if (chatOverlay) {
+    if (state === 'connected') {
+      chatOverlay.style.display = 'flex';
+    } else {
+      chatOverlay.style.display = 'none';
+      const chatMessages = $('chat-messages');
+      if (chatMessages) chatMessages.innerHTML = ''; // Clear chat on disconnect
+    }
+  }
 }
 
 // ── Status indicator ──────────────────────────────────────────────────────
@@ -114,8 +126,12 @@ function setState(state, statusText, statusCls) {
  * @param {string|null} cls   - 'on' | 'warn' | 'err' | null (grey)
  */
 function setStatus(text, cls) {
-  $('status').textContent = text;
-  $('dot').className = 'dot' + (cls ? ' ' + cls : '');
+  const statusEl = $('status');
+  if (statusEl) statusEl.textContent = text;
+
+  const dotEl = $('dot');
+  const dotClass = 'dot' + (cls ? ' ' + cls : '');
+  if (dotEl) dotEl.className = dotClass;
 }
 
 // ── Auth-gated UI rendering ───────────────────────────────────────────────
@@ -129,14 +145,14 @@ function setStatus(text, cls) {
 function renderAuth(session) {
   const authed = !!session;
 
-  $('gate').style.display    = authed ? 'none'  : 'block';
-  $('app').style.display     = authed ? 'flex'  : 'none';
-  $('account').style.display = authed ? 'flex'  : 'none';
+  $('gate').style.display = authed ? 'none' : 'block';
+  $('app').style.display = authed ? 'flex' : 'none';
+  $('account').style.display = authed ? 'flex' : 'none';
 
   if (authed) {
     $('who').textContent = session.user.email;
     connectSocket(session);
-    
+
     // Only enter the lobby on initial login, not on every auth state refresh
     if (appState === 'camera-off') {
       enterLobby(session);
@@ -153,7 +169,7 @@ function renderAuth(session) {
  */
 async function enterLobby(session) {
   setState('lobby'); // Prevents re-entry and hides dashboard buttons
-  
+
   try {
     Profile.init(Auth.getClient());
     const profile = await Profile.load(session.user.id);
@@ -164,22 +180,40 @@ async function enterLobby(session) {
   }
 
   // Auto-start camera in the lobby
+  console.log("[WebRTC] Step 1: Requesting temporary stream for permissions...");
+  let tempStream = null;
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    _applyLocalStream();
+    tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    console.log("[WebRTC] Step 1 Success: Temporary stream acquired. Permissions granted.");
+  } catch (err) {
+    console.warn("[WebRTC] Step 1 Failed (permission blocked or no gesture). Will enumerate without labels.", err);
+  }
 
-    // Enumerate hardware devices for the dropdowns
+  try {
+    console.log("[WebRTC] Step 2: Enumerating devices...");
     const devices = await navigator.mediaDevices.enumerateDevices();
-    const camSelect = $('camera-select');
-    const micSelect = $('mic-select');
-    if (camSelect && micSelect) {
+    console.log(`[WebRTC] Step 2 Success: Found ${devices.length} devices.`, devices);
+
+    console.log("[WebRTC] Step 3: Fetching DOM Select elements...");
+    const camSelect = document.getElementById('camera-select');
+    const micSelect = document.getElementById('mic-select');
+
+    if (!camSelect || !micSelect) {
+      console.error("CRITICAL: Dropdown elements 'camera-select' or 'mic-select' not found in DOM!");
+    } else {
+      console.log("[WebRTC] DOM elements found. Populating dropdowns...");
       camSelect.innerHTML = '';
       micSelect.innerHTML = '';
+
+      let camCount = 0;
+      let micCount = 0;
+
       devices.forEach(d => {
         if (d.kind === 'videoinput') {
+          camCount++;
           const opt = document.createElement('option');
           opt.value = d.deviceId;
-          opt.text = d.label || `Camera ${camSelect.length + 1}`;
+          opt.text = d.label || `Camera ${camCount}`;
           camSelect.appendChild(opt);
         } else if (d.kind === 'audioinput') {
           const opt = document.createElement('option');
@@ -201,8 +235,13 @@ async function enterLobby(session) {
       camSelect.onchange = switchDevice;
       micSelect.onchange = switchDevice;
     }
+
+    console.log("[WebRTC] Step 4: Stopping temporary stream tracks to disable camera light...");
+    tempStream.getTracks().forEach(t => t.stop());
+    console.log("[WebRTC] Temporary stream stopped successfully.");
+
   } catch (err) {
-    console.error('[main] Camera blocked in lobby:', err);
+    console.error('[WebRTC] FATAL ERROR during initialization block:', err);
     setStatus('Camera blocked: ' + err.name, 'err');
   }
 }
@@ -245,7 +284,7 @@ function queueForStranger(profileDataOverride, statusText = 'Entering queue…')
 
   const profileData = profileDataOverride || Profile.get() || {};
   socket.emit('find-stranger', profileData);
-  
+
   setStatus(statusText, 'warn');
   setState('searching');
 }
@@ -329,9 +368,16 @@ function bindSocketEvents() {
 
   // ── WebRTC signaling relay ───────────────────────────────────────────
 
-  socket.on('offer',     async offer     => WebRTC.handleOffer(offer, socket));
-  socket.on('answer',    async answer    => WebRTC.handleAnswer(answer));
+  socket.on('offer', async offer => WebRTC.handleOffer(offer, socket));
+  socket.on('answer', async answer => WebRTC.handleAnswer(answer));
   socket.on('candidate', async candidate => WebRTC.handleCandidate(candidate));
+
+  // ── Chat relay ───────────────────────────────────────────────────────
+  socket.on('chat-message', text => {
+    if (typeof appendChatMessage === 'function') {
+      appendChatMessage(text, false);
+    }
+  });
 }
 
 // ── WebRTC state → UI ─────────────────────────────────────────────────────
@@ -342,9 +388,9 @@ function bindSocketEvents() {
  * @param {string} rtcState
  */
 function onRtcStateChange(rtcState) {
-  if      (rtcState === 'connected')    setState('connected', 'Connected!', 'on');
-  else if (rtcState === 'connecting')   setStatus('Connecting…', 'warn');
-  else if (rtcState === 'failed')       setState('idle', 'Connection failed — try again', 'err');
+  if (rtcState === 'connected') setState('connected', 'Connected!', 'on');
+  else if (rtcState === 'connecting') setStatus('Connecting…', 'warn');
+  else if (rtcState === 'failed') setState('idle', 'Connection failed — try again', 'err');
   else if (rtcState === 'disconnected') setState('idle', 'Connection lost — find a new stranger?', 'err');
 }
 
@@ -402,14 +448,14 @@ if (editProfileBtn) {
 
 function renderPartnerProfile(p) {
   if (!p) p = {};
-  
+
   // Basic info
   const nameEl = $('partner-name');
   if (nameEl) nameEl.textContent = p.nickname || 'Stranger';
-  
+
   const remoteVidLabel = $('remote-vid-label');
   if (remoteVidLabel) remoteVidLabel.textContent = p.nickname || 'Stranger';
-  
+
   const demoParts = [];
   if (p.age) demoParts.push(p.age);
   if (p.gender) demoParts.push(p.gender.charAt(0).toUpperCase() + p.gender.slice(1));
@@ -435,7 +481,7 @@ function renderPartnerProfile(p) {
   const grid = $('partner-activities');
   if (grid) {
     grid.innerHTML = '';
-    
+
     // Get local user's selected interests for matching
     const localProfile = typeof Profile !== 'undefined' ? (Profile.get() || {}) : {};
     const localInterests = Array.isArray(localProfile.activities) ? localProfile.activities : [];
@@ -444,12 +490,12 @@ function renderPartnerProfile(p) {
       p.activities.forEach(interestName => {
         if (!interestName) return;
         const isShared = localInterests.includes(interestName);
-        
+
         const pill = document.createElement('div');
         pill.className = 'stranger-interest-pill';
         if (isShared) pill.classList.add('shared-interest');
         pill.textContent = interestName;
-        
+
         grid.appendChild(pill);
       });
     } else {
@@ -471,7 +517,7 @@ function renderPartnerProfile(p) {
         .slice(0, 5)
         .filter(Boolean)
         .map(item => (typeof item === 'object' ? item : { title: String(item), artist: '', cover: '' }));
-        
+
       songs.forEach((song, idx) => {
         const row = document.createElement('div');
         row.className = 'song-row-card';
@@ -513,7 +559,7 @@ function renderPartnerProfile(p) {
 function resetPartnerProfile() {
   const nameEl = $('partner-name');
   if (nameEl) nameEl.textContent = 'Finding a new match...';
-  
+
   const remoteVidLabel = $('remote-vid-label');
   if (remoteVidLabel) remoteVidLabel.textContent = 'Stranger';
   const demoEl = $('partner-demographics');
@@ -534,13 +580,33 @@ const profileTriggerBtn = $('partner-profile-btn');
 const profilePanelNode = $('partner-profile-panel');
 
 let profileHoverTimeout;
+let profileUnlockTimeout;
 function setProfileHover(active) {
   clearTimeout(profileHoverTimeout);
+  const container = $('partner-profile-container');
   if (active) {
+    clearTimeout(profileUnlockTimeout);
+    if (container && !videoGridNode?.classList.contains('is-active')) {
+      const rect = container.getBoundingClientRect();
+      container.style.position = 'fixed';
+      container.style.left = rect.left + 'px';
+      container.style.top = rect.top + 'px';
+      container.style.bottom = 'auto';
+      container.style.right = 'auto';
+    }
     videoGridNode?.classList.add('is-active');
   } else {
     profileHoverTimeout = setTimeout(() => {
       videoGridNode?.classList.remove('is-active');
+      profileUnlockTimeout = setTimeout(() => {
+        if (container && !videoGridNode?.classList.contains('is-active')) {
+          container.style.position = '';
+          container.style.left = '';
+          container.style.top = '';
+          container.style.bottom = '';
+          container.style.right = '';
+        }
+      }, 500);
     }, 150);
   }
 }
@@ -549,8 +615,10 @@ if (profileTriggerBtn) {
   profileTriggerBtn.addEventListener('mouseenter', () => setProfileHover(true));
   profileTriggerBtn.addEventListener('mouseleave', () => setProfileHover(false));
   // Allow toggling on click for touch devices
-  profileTriggerBtn.addEventListener('click', () => {
-    videoGridNode?.classList.toggle('is-active');
+  profileTriggerBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const isActive = videoGridNode?.classList.contains('is-active');
+    setProfileHover(!isActive);
   });
 }
 if (profilePanelNode) {
@@ -586,3 +654,46 @@ window.showProfileModal = () => {
 };
 
 bootstrap();
+
+// ── Chat Overlay Focus Logic ──────────────────────────────────────────────
+const chatInputDom = document.getElementById('chat-input');
+const chatMessagesDom = document.getElementById('chat-messages');
+const chatOverlayEl = document.getElementById('chat-overlay');
+
+if (!chatInputDom || !chatMessagesDom) {
+  console.error("CRITICAL DOM ERROR: #chat-input or #chat-messages is completely missing from the HTML! Scripts might be loading before the DOM elements.");
+}
+
+if (chatInputDom && chatOverlayEl) {
+  chatInputDom.addEventListener('focus', () => {
+    chatOverlayEl.classList.add('active');
+  });
+  chatInputDom.addEventListener('blur', () => {
+    chatOverlayEl.classList.remove('active');
+  });
+
+  chatInputDom.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const text = chatInputDom.value.trim();
+      if (!text) return;
+
+      console.log("Sending message:", text);
+      chatInputDom.value = '';
+      if (socket && socket.connected) {
+        socket.emit('chat-message', text);
+      }
+      appendChatMessage(text, true);
+    }
+  });
+}
+
+function appendChatMessage(text, isMe) {
+  const chatMessages = document.getElementById('chat-messages');
+  if (!chatMessages) return;
+  const msgEl = document.createElement('div');
+  msgEl.className = 'chat-message ' + (isMe ? 'me' : 'stranger');
+  msgEl.textContent = text;
+  chatMessages.appendChild(msgEl);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}

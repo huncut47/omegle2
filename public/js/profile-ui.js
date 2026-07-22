@@ -200,6 +200,13 @@ window.ProfileUI = (() => {
     // Basic fields
     if (p.age)    $('prof-age').value    = p.age;
     if (p.gender) $('prof-gender').value = p.gender;
+    
+    const storedLang = localStorage.getItem('my_language');
+    if (storedLang) {
+      $('prof-language').value = storedLang;
+    } else if (p.language) {
+      $('prof-language').value = p.language;
+    }
 
     // Avatar
     if (p.profile_picture) {
@@ -615,6 +622,7 @@ window.ProfileUI = (() => {
     const nickname = $('prof-nickname')?.value.trim() || null;  // optional
     const age      = parseInt($('prof-age').value, 10);
     const gender   = $('prof-gender').value.trim();
+    const language = $('prof-language').value.trim();
     const activities = Array.from(_selectedActivities);
     const topSongs = _songs.slice();   // snapshot of the tag array
 
@@ -622,6 +630,7 @@ window.ProfileUI = (() => {
     const errors = [];
     if (!age || age < 13 || age > 120) errors.push('Please enter a valid age (13–120).');
     if (!gender)                        errors.push('Please select your gender.');
+    if (!language)                      errors.push('Please select your language.');
     if (activities.length === 0)        errors.push('Pick at least one activity.');
 
     if (errors.length > 0) {
@@ -651,6 +660,7 @@ window.ProfileUI = (() => {
       nickname,
       age,
       gender,
+      language,
       profile_picture: profilePictureUrl,
       activities,
       top_songs: topSongs,
@@ -664,6 +674,7 @@ window.ProfileUI = (() => {
     }
 
     // Success — notify caller and close
+    localStorage.setItem('my_language', language);
     if (_onComplete) _onComplete(Profile.get());
     close();
   }

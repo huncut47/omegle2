@@ -104,6 +104,56 @@
       </div>
     </header>
 
+    <!-- ── Matchmaking Filter Bar ──────────────────────────── -->
+    <div id="lobby-filter-bar" class="lobby-filter-bar">
+      <div class="filter-group">
+        <label for="lobby-gender">Gender:</label>
+        <select id="lobby-gender" class="filter-select">
+          <option value="any">Any</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <div class="filter-group filter-age-group">
+        <label style="min-width: 40px;">Age:</label>
+        <div class="age-inputs-wrap">
+          <input type="number" id="lobby-age-min-input" class="filter-input-small" min="13" max="60" value="13">
+          <div class="dual-slider-container">
+            <div class="slider-track" id="slider-track"></div>
+            <div class="slider-track-fill" id="slider-track-fill"></div>
+            <input type="range" id="lobby-age-min" min="13" max="60" value="13" step="1">
+            <input type="range" id="lobby-age-max" min="13" max="60" value="60" step="1">
+          </div>
+          <input type="number" id="lobby-age-max-input" class="filter-input-small" min="13" max="60" value="60">
+        </div>
+      </div>
+      <div class="filter-group">
+        <label for="lobby-language">Language:</label>
+        <select id="lobby-language" class="filter-select">
+          <option value="any">Any</option>
+          <option value="english">English</option>
+          <option value="spanish">Spanish</option>
+          <option value="french">French</option>
+          <option value="german">German</option>
+          <option value="chinese">Chinese</option>
+          <option value="japanese">Japanese</option>
+          <option value="korean">Korean</option>
+          <option value="hindi">Hindi</option>
+          <option value="arabic">Arabic</option>
+          <option value="portuguese">Portuguese</option>
+          <option value="russian">Russian</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="filter-group match-mode-group">
+        <label for="lobby-match-mode">Mode:</label>
+        <select id="lobby-match-mode" class="filter-select">
+          <option value="strict">Strict Match</option>
+          <option value="speed">Speed Match (10s)</option>
+        </select>
+      </div>
+    </div>
+
     <!-- ── Video Grid ───────────────────────────────────────── -->
     <main id="video-grid" class="video-grid" aria-label="Video streams">
 
@@ -351,11 +401,11 @@
                 autocomplete="off">
             </div>
 
-            <!-- Age & Gender -->
+            <!-- Age & Gender & Language -->
             <div class="prof-row">
               <div class="prof-field">
                 <label class="prof-label" for="prof-age">Age</label>
-                <input id="prof-age" class="prof-input" type="number" min="13" max="120" placeholder="e.g. 24"
+                <input id="prof-age" class="prof-input" type="number" min="13" max="60" placeholder="e.g. 24"
                   autocomplete="off">
               </div>
               <div class="prof-field">
@@ -366,6 +416,27 @@
                   <option value="female">Female</option>
                   <option value="non-binary">Non-binary</option>
                   <option value="prefer-not-to-say">Prefer not to say</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="prof-row">
+              <div class="prof-field">
+                <label class="prof-label" for="prof-language">My Language</label>
+                <select id="prof-language" class="prof-input prof-select">
+                  <option value="" disabled>Select…</option>
+                  <option value="english" selected>English</option>
+                  <option value="spanish">Spanish</option>
+                  <option value="french">French</option>
+                  <option value="german">German</option>
+                  <option value="chinese">Chinese</option>
+                  <option value="japanese">Japanese</option>
+                  <option value="korean">Korean</option>
+                  <option value="hindi">Hindi</option>
+                  <option value="arabic">Arabic</option>
+                  <option value="portuguese">Portuguese</option>
+                  <option value="russian">Russian</option>
                   <option value="other">Other</option>
                 </select>
               </div>

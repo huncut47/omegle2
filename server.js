@@ -35,6 +35,120 @@ function removeFromQueue(socketId) {
   if (idx !== -1) waitingQueue.splice(idx, 1);
 }
 
+function isCompatible(s1, s2) {
+  const p1 = s1.data.profile || {};
+  const f1 = s1.data.filters || {};
+  const m1 = s1.data.matchMode || 'strict';
+  const t1 = s1.data.queueEntryTime || Date.now();
+
+  const p2 = s2.data.profile || {};
+  const f2 = s2.data.filters || {};
+  const m2 = s2.data.matchMode || 'strict';
+  const t2 = s2.data.queueEntryTime || Date.now();
+
+  const strict1 = m1 === 'strict' || (m1 === 'speed' && Date.now() - t1 < 10000);
+  const strict2 = m2 === 'strict' || (m2 === 'speed' && Date.now() - t2 < 10000);
+
+  // If s1 requires strict, s2's profile must pass s1's filters
+  if (strict1) {
+    if (f1.gender && f1.gender !== 'any' && p2.gender !== f1.gender) return false;
+    if (f1.language && f1.language !== 'any' && p2.language !== f1.language) return false;
+    if (p2.age && (p2.age < f1.ageMin || p2.age > f1.ageMax)) return false;
+  }
+
+  // If s2 requires strict, s1's profile must pass s2's filters
+  if (strict2) {
+    if (f2.gender && f2.gender !== 'any' && p1.gender !== f2.gender) return false;
+    if (f2.language && f2.language !== 'any' && p1.language !== f2.language) return false;
+    if (p1.age && (p1.age < f2.ageMin || p1.age > f2.ageMax)) return false;
+  }
+
+  return true;
+}
+
+function processQueue() {
+  // Clean out stale sockets
+  for (let i = waitingQueue.length - 1; i >= 0; i--) {
+    const s = io.sockets.sockets.get(waitingQueue[i]);
+    if (!s || !s.connected || s.data.room) {
+      waitingQueue.splice(i, 1);
+    }
+  }
+
+  // Try to match pairs
+  for (let i = 0; i < waitingQueue.length; i++) {
+    const s1Id = waitingQueue[i];
+    const s1 = io.sockets.sockets.get(s1Id);
+    if (!s1 || s1.data.room) continue;
+
+    let bestScore = -1;
+    let bestIndex = -1;
+
+    const p1 = s1.data.profile || {};
+    const interests1 = Array.isArray(p1.activities) ? p1.activities : [];
+    const songs1 = Array.isArray(p1.top_songs) ? p1.top_songs : [];
+
+    for (let j = i + 1; j < waitingQueue.length; j++) {
+      const s2Id = waitingQueue[j];
+      const s2 = io.sockets.sockets.get(s2Id);
+      if (!s2 || s2.data.room) continue;
+
+      if (!isCompatible(s1, s2)) continue;
+
+      const isRandom = Math.random() < 0.3;
+      if (isRandom) {
+        bestIndex = j;
+        break; // Random match, take it
+      }
+
+      // Score based on interests & songs
+      let score = 0;
+      const p2 = s2.data.profile || {};
+      const interests2 = Array.isArray(p2.activities) ? p2.activities : [];
+      const songs2 = Array.isArray(p2.top_songs) ? p2.top_songs : [];
+
+      interests2.forEach(interest => {
+        if (interests1.includes(interest)) score += 1;
+      });
+
+      songs2.forEach(song2 => {
+        if (song2 && song2.artist) {
+          const hasArtist = songs1.some(song1 => song1 && song1.artist === song2.artist);
+          if (hasArtist) score += 1;
+        }
+      });
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = j;
+      }
+    }
+
+    if (bestIndex !== -1) {
+      // Match found!
+      const s2Id = waitingQueue[bestIndex];
+      const s2 = io.sockets.sockets.get(s2Id);
+
+      // Remove both from queue
+      waitingQueue.splice(bestIndex, 1);
+      waitingQueue.splice(i, 1);
+      i--; // Adjust index since we removed i
+
+      const room = randomUUID();
+      s1.join(room);
+      s2.join(room);
+      s1.data.room = room;
+      s2.data.room = room;
+
+      s1.emit('start', { initiator: true, partnerProfile: s2.data.profile || {} });
+      s2.emit('start', { initiator: false, partnerProfile: s1.data.profile || {} });
+    }
+  }
+}
+
+// Poll queue every 2 seconds for speed match fallbacks
+setInterval(processQueue, 2000);
+
 // ── Routes ───────────────────────────────────────────────────────────────
 
 /**
@@ -94,10 +208,18 @@ io.on('connection', (socket) => {
    *   • If a live partner is found  → create a UUID room, join both, start WebRTC.
    *   • If no partner is available  → push this socket and emit "searching".
    */
-  socket.on('find-stranger', (profile) => {
-    // Store the profile data for future matchmaking filter use.
-    // The payload is optional (older clients omit it) — default to empty object.
+  socket.on('find-stranger', (payload) => {
+    const data = (payload && typeof payload === 'object') ? payload : {};
+    
+    // Support legacy clients sending just profile, or new clients sending { profile, filters, matchMode }
+    const profile = data.profile !== undefined ? data.profile : data;
+    const filters = data.filters || { gender: 'any', language: 'any', ageMin: 13, ageMax: 120 };
+    const matchMode = data.matchMode || 'strict';
+
     socket.data.profile = (profile && typeof profile === 'object') ? profile : {};
+    socket.data.filters = filters;
+    socket.data.matchMode = matchMode;
+    socket.data.queueEntryTime = Date.now();
 
     // Idempotency: ensure we're not already in the queue
     removeFromQueue(socket.id);
@@ -109,88 +231,9 @@ io.on('connection', (socket) => {
       socket.data.room = null;
     }
 
-    // ── Matchmaking Algorithm ──────────────────────────────────────────
-    // Clean out stale sockets first
-    for (let i = waitingQueue.length - 1; i >= 0; i--) {
-      const s = io.sockets.sockets.get(waitingQueue[i]);
-      if (!s || !s.connected) {
-        waitingQueue.splice(i, 1);
-      }
-    }
-
-    let matched = false;
-
-    if (waitingQueue.length > 0) {
-      let partnerIndex = -1;
-      const isRandom = Math.random() < 0.3;
-
-      if (isRandom) {
-        partnerIndex = 0;
-      } else {
-        const myProfile = socket.data.profile || {};
-        const myInterests = Array.isArray(myProfile.activities) ? myProfile.activities : [];
-        const mySongs = Array.isArray(myProfile.top_songs) ? myProfile.top_songs : [];
-
-        let bestScore = 0;
-        let bestIndex = -1;
-
-        waitingQueue.forEach((id, index) => {
-          const s = io.sockets.sockets.get(id);
-          const theirProfile = s.data.profile || {};
-          const theirInterests = Array.isArray(theirProfile.activities) ? theirProfile.activities : [];
-          const theirSongs = Array.isArray(theirProfile.top_songs) ? theirProfile.top_songs : [];
-
-          let score = 0;
-          // Score Interests
-          theirInterests.forEach(interest => {
-            if (myInterests.includes(interest)) score += 1;
-          });
-
-          // Score Artists
-          theirSongs.forEach(theirSong => {
-            if (theirSong && theirSong.artist) {
-              const hasArtist = mySongs.some(mySong => mySong && mySong.artist === theirSong.artist);
-              if (hasArtist) score += 1;
-            }
-          });
-
-          if (score > bestScore) {
-            bestScore = score;
-            bestIndex = index;
-          }
-        });
-
-        if (bestIndex !== -1) {
-          partnerIndex = bestIndex;
-        } else {
-          partnerIndex = 0; // Fallback
-        }
-      }
-
-      const partnerId = waitingQueue[partnerIndex];
-      waitingQueue.splice(partnerIndex, 1);
-      const partnerSocket = io.sockets.sockets.get(partnerId);
-
-      // ── Successful match ───────────────────────────────────────────────
-      const room = randomUUID();
-
-      socket.join(room);
-      partnerSocket.join(room);
-      socket.data.room = room;
-      partnerSocket.data.room = room;
-
-      // The incoming socket (the "new arrival") creates the WebRTC offer.
-      socket.emit('start', { initiator: true, partnerProfile: partnerSocket.data.profile || {} });
-      partnerSocket.emit('start', { initiator: false, partnerProfile: socket.data.profile || {} });
-
-      matched = true;
-    }
-
-    if (!matched) {
-      // No partner available — wait in the queue
-      waitingQueue.push(socket.id);
-      socket.emit('searching');
-    }
+    waitingQueue.push(socket.id);
+    socket.emit('searching');
+    processQueue();
   });
 
   // ── Graceful room exit (Next / Skip / Stop) ────────────────────────────

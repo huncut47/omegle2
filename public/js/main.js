@@ -116,6 +116,16 @@ function setState(state, statusText, statusCls) {
       if (chatMessages) chatMessages.innerHTML = ''; // Clear chat on disconnect
     }
   }
+
+  // ── Matchmaking Filter Bar ───────────────────────────────────────────
+  const filterBar = $('lobby-filter-bar');
+  if (filterBar) {
+    if (state === 'connected') {
+      filterBar.classList.add('disabled');
+    } else {
+      filterBar.classList.remove('disabled');
+    }
+  }
 }
 
 // ── Status indicator ──────────────────────────────────────────────────────
@@ -282,8 +292,30 @@ function queueForStranger(profileDataOverride, statusText = 'Entering queue…')
   socket.emit('leave-room');
   if ($('remote')) $('remote').srcObject = null;
 
-  const profileData = profileDataOverride || Profile.get() || {};
-  socket.emit('find-stranger', profileData);
+  const profileData = { ...(profileDataOverride || Profile.get() || {}) };
+  const myLang = localStorage.getItem('my_language');
+  if (myLang) profileData.language = myLang;
+  
+  let filters = { gender: 'any', language: 'any', ageMin: 13, ageMax: 60 };
+  let matchMode = 'strict';
+  try {
+    const filterGender = $('lobby-gender')?.value;
+    if (filterGender) filters.gender = filterGender;
+
+    const filterLanguage = $('lobby-language')?.value;
+    if (filterLanguage) filters.language = filterLanguage;
+
+    const filterAgeMin = parseInt($('lobby-age-min')?.value, 10);
+    if (!isNaN(filterAgeMin)) filters.ageMin = filterAgeMin;
+
+    const filterAgeMax = parseInt($('lobby-age-max')?.value, 10);
+    if (!isNaN(filterAgeMax)) filters.ageMax = filterAgeMax;
+
+    const mode = $('lobby-match-mode')?.value;
+    if (mode) matchMode = mode;
+  } catch(e) {}
+
+  socket.emit('find-stranger', { profile: profileData, filters, matchMode });
 
   setStatus(statusText, 'warn');
   setState('searching');
@@ -721,3 +753,74 @@ function appendChatMessage(text, isMe) {
   chatMessages.appendChild(msgEl);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
+// -- Dual Slider Logic -------------------------------------------------------
+const ageMinSlider = document.getElementById('lobby-age-min');
+const ageMaxSlider = document.getElementById('lobby-age-max');
+const ageMinInput = document.getElementById('lobby-age-min-input');
+const ageMaxInput = document.getElementById('lobby-age-max-input');
+const sliderTrackFill = document.getElementById('slider-track-fill');
+
+function updateAgeSlider(e) {
+  if (!ageMinSlider || !ageMaxSlider) return;
+  
+  // If event came from an input box, update the slider's value first
+  if (e && e.target) {
+    if (e.target === ageMinInput) ageMinSlider.value = ageMinInput.value;
+    if (e.target === ageMaxInput) ageMaxSlider.value = ageMaxInput.value;
+  }
+  
+  let minVal = parseInt(ageMinSlider.value, 10) || 13;
+  let maxVal = parseInt(ageMaxSlider.value, 10) || 60;
+  
+  // Prevent thumbs from crossing
+  if (minVal > maxVal) {
+    if (document.activeElement === ageMinSlider || document.activeElement === ageMinInput) {
+      ageMinSlider.value = maxVal;
+      minVal = maxVal;
+    } else {
+      ageMaxSlider.value = minVal;
+      maxVal = minVal;
+    }
+  }
+  
+  // Update inputs to match validated slider values
+  if (ageMinInput && document.activeElement !== ageMinInput) {
+    ageMinInput.value = minVal;
+  }
+  if (ageMaxInput && document.activeElement !== ageMaxInput) {
+    ageMaxInput.value = maxVal;
+  }
+  
+  // Update visual track
+  if (sliderTrackFill) {
+    const minPercent = ((minVal - 13) / (60 - 13)) * 100;
+    const maxPercent = ((maxVal - 13) / (60 - 13)) * 100;
+    sliderTrackFill.style.left = minPercent + '%';
+    sliderTrackFill.style.width = (maxPercent - minPercent) + '%';
+  }
+}
+
+if (ageMinSlider && ageMaxSlider) {
+  ageMinSlider.addEventListener('input', updateAgeSlider);
+  ageMaxSlider.addEventListener('input', updateAgeSlider);
+  
+  if (ageMinInput) {
+    ageMinInput.addEventListener('input', updateAgeSlider);
+    ageMinInput.addEventListener('change', (e) => {
+      updateAgeSlider(e);
+      e.target.value = ageMinSlider.value;
+    });
+  }
+  
+  if (ageMaxInput) {
+    ageMaxInput.addEventListener('input', updateAgeSlider);
+    ageMaxInput.addEventListener('change', (e) => {
+      updateAgeSlider(e);
+      e.target.value = ageMaxSlider.value;
+    });
+  }
+  
+  updateAgeSlider(); // Init
+}
+

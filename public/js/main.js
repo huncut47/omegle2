@@ -269,9 +269,9 @@ function _applyLocalStream() {
     localVideo.srcObject = localStream;
     localVideo.onloadedmetadata = () => {
       if (localVideo.videoWidth && localVideo.videoHeight) {
-        const ratio = localVideo.videoWidth / localVideo.videoHeight;
-        const card = $('local-card');
-        if (card) card.style.aspectRatio = ratio.toString();
+        // We no longer set aspect ratio here so the grid can fill vertically
+        // const card = $('local-card');
+        // if (card) card.style.aspectRatio = ratio.toString();
       }
     };
   }
@@ -822,5 +822,41 @@ if (ageMinSlider && ageMaxSlider) {
   }
   
   updateAgeSlider(); // Init
+}
+
+
+// -- Fullscreen Avatar Overlay -----------------------------------------------
+const partnerAvatar = document.getElementById('partner-avatar');
+const fsOverlay = document.getElementById('fullscreen-image-overlay');
+const fsCloseBtn = document.getElementById('fullscreen-close-btn');
+const fsImage = document.getElementById('fullscreen-image');
+
+if (partnerAvatar && fsOverlay && fsCloseBtn && fsImage) {
+  partnerAvatar.style.cursor = 'pointer';
+  
+  partnerAvatar.addEventListener('click', () => {
+    const src = partnerAvatar.src;
+    // Only open if it's a valid image URL and not empty
+    if (src && !src.endsWith('partner-avatar')) {
+      fsImage.src = src;
+      fsOverlay.style.display = 'flex';
+      // force reflow for animation
+      void fsOverlay.offsetWidth;
+      fsOverlay.classList.add('active');
+    }
+  });
+  
+  const closeFs = () => {
+    fsOverlay.classList.remove('active');
+    setTimeout(() => {
+      fsOverlay.style.display = 'none';
+      fsImage.src = '';
+    }, 300);
+  };
+  
+  fsCloseBtn.addEventListener('click', closeFs);
+  fsOverlay.addEventListener('click', (e) => {
+    if (e.target === fsOverlay) closeFs();
+  });
 }
 

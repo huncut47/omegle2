@@ -298,9 +298,9 @@ body {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 18px 18px 28px;
+  padding: 18px 18px 100px;
   width: 100%;
   gap: 18px;
 }
@@ -399,13 +399,21 @@ body {
   border-radius: var(--r-md);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
-  transition: opacity 0.3s ease, filter 0.3s ease;
+  max-height: 100px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .lobby-filter-bar.disabled {
-  opacity: 0.5;
+  opacity: 0;
   pointer-events: none;
-  filter: grayscale(1);
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: -18px; /* Offset the app gap */
+  border-width: 0;
+  transform: translateY(-20px);
 }
 
 .filter-group {
@@ -527,7 +535,7 @@ body {
 /* ── 6. Video Grid ─────────────────────────────────────────────────── */
 .video-grid {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   gap: 14px;
   width: 100%;
@@ -556,9 +564,8 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
   width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9;
-  /* Default fallback until JS overrides */
+  height: 100%;
+  /* aspect-ratio removed so they can stretch vertically */
   transition:
     border-color var(--t-md),
     box-shadow var(--t-md);
@@ -1777,7 +1784,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 0 0 calc((min(100vw, 1100px) - 50px) / 2);
+  flex: 0 0 calc((min(100vw, 1400px) - 50px) / 2);
   /* ALWAYS rigid 50%! */
   min-width: 0;
   transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
@@ -1786,8 +1793,8 @@ body {
 /* ── Partner Profile Trigger & Expansion ─────────────────────────────── */
 .partner-profile-container {
   position: absolute;
-  bottom: -40px;
-  left: 0;
+  bottom: 12px;
+  right: 12px;
   transform: none !important;
   margin: 0 !important;
   z-index: 10;
@@ -1797,13 +1804,16 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 5px 12px;
   font-family: var(--font);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--text-2);
-  background: var(--surface-3);
-  border: 1px solid var(--border);
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--r-pill);
   cursor: pointer;
   transition: all var(--t-sm);
@@ -2182,3 +2192,55 @@ body {
 #chat-input.cooldown {
   opacity: 0.6;
 }
+/* -- Fullscreen Image Overlay -------------------------------------- */
+.fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.fullscreen-overlay.active {
+  opacity: 1;
+}
+
+.fullscreen-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.fullscreen-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#fullscreen-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.fullscreen-overlay.active #fullscreen-image {
+  transform: scale(1);
+}
+

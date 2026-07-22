@@ -414,9 +414,6 @@
                   <option value="" disabled selected>Select…</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
-                  <option value="non-binary">Non-binary</option>
-                  <option value="prefer-not-to-say">Prefer not to say</option>
-                  <option value="other">Other</option>
                 </select>
               </div>
             </div>
@@ -485,8 +482,18 @@
   <script src="/js/webrtc.js"></script>
   <script src="/js/profile.js"></script>
   <script src="/js/profile-ui.js"></script>
-  <script src="/js/main.js"></script>
+  <div id="fullscreen-image-overlay" class="fullscreen-overlay" style="display:none">
+    <button id="fullscreen-close-btn" class="fullscreen-close" aria-label="Close image">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <img id="fullscreen-image" src="" alt="Fullscreen Profile Photo">
+  </div>
 
+  <script src="/js/main.js"></script>
 </body>
 
 </html>

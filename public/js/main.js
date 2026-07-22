@@ -346,6 +346,7 @@ function connectSocket(session) {
 
   socket = io({ auth: { token: session.access_token } });
   bindSocketEvents();
+  if (window.Friends) window.Friends.init(socket, session.user);
 }
 
 /**
@@ -387,6 +388,7 @@ function bindSocketEvents() {
   socket.on('start', async ({ initiator, partnerProfile }) => {
     setState('connected', 'Connecting…', 'warn');
     if (typeof renderPartnerProfile === 'function') renderPartnerProfile(partnerProfile);
+    if (window.Friends && partnerProfile.user_id) window.Friends.setStrangerId(partnerProfile.user_id);
     await WebRTC.createPeer(localStream, socket, initiator, onRtcStateChange);
   });
 
@@ -410,6 +412,11 @@ function bindSocketEvents() {
       appendChatMessage(text, false);
     }
   });
+
+  // ── Friends & Private Messaging Relay ────────────────────────────────
+  socket.on('friend-request', data => { if (window.Friends) window.Friends.handleIncomingSocketEvent('friend-request', data); });
+  socket.on('friend-accept', data => { if (window.Friends) window.Friends.handleIncomingSocketEvent('friend-accept', data); });
+  socket.on('private-message', data => { if (window.Friends) window.Friends.handleIncomingSocketEvent('private-message', data); });
 }
 
 // ── WebRTC state → UI ─────────────────────────────────────────────────────

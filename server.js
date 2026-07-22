@@ -16,6 +16,10 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// ── Friends & Private Messaging Maps ──────────────────────────────
+const connectedUsers = new Map(); // user_id -> socket.id
+const socketToUser = new Map();   // socket.id -> user_id
+
 // ── Matchmaking queue ────────────────────────────────────────────────────
 //
 // An ordered array of socket IDs waiting for a match.
@@ -196,6 +200,10 @@ io.use(async (socket, next) => {
 // ── Socket.IO events ─────────────────────────────────────────────────────
 
 io.on('connection', (socket) => {
+  // Track user for private messaging & friend requests
+  const userId = socket.data.user.id;
+  connectedUsers.set(userId, socket.id);
+  socketToUser.set(socket.id, userId);
 
   // ── Matchmaking ────────────────────────────────────────────────────────
 
@@ -268,9 +276,40 @@ io.on('connection', (socket) => {
     // Scrub from queue so dead IDs never block a future match
     removeFromQueue(socket.id);
 
+    // Clean up tracking maps
+    const uid = socketToUser.get(socket.id);
+    if (uid) {
+      connectedUsers.delete(uid);
+      socketToUser.delete(socket.id);
+    }
+
     // Notify the active room partner, if any
     if (socket.data.room) {
       socket.to(socket.data.room).emit('peer-left');
+    }
+  });
+
+  // ── Friends & Private Messaging ────────────────────────────────────────
+  socket.on('friend-request', (data) => {
+    // data = { to: receiverId, from: myUserId, profile: myProfileData }
+    const targetSocket = connectedUsers.get(data.to);
+    if (targetSocket) {
+      io.to(targetSocket).emit('friend-request', data);
+    }
+  });
+
+  socket.on('friend-accept', (data) => {
+    const targetSocket = connectedUsers.get(data.to);
+    if (targetSocket) {
+      io.to(targetSocket).emit('friend-accept', data);
+    }
+  });
+
+  socket.on('private-message', (data) => {
+    // data = { to: receiverId, from: myUserId, content: string, timestamp: Date }
+    const targetSocket = connectedUsers.get(data.to);
+    if (targetSocket) {
+      io.to(targetSocket).emit('private-message', data);
     }
   });
 });

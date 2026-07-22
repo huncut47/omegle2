@@ -98,7 +98,17 @@
           </svg>
           Profile
         </button>
-        <button id="logout" class="btn btn-ghost">
+        <button id="friends-btn" class="btn btn-ghost btn-icon" title="Friends" aria-label="Friends">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          Friends
+        </button>
+        <button id="logout" class="btn btn-ghost" title="Sign out" aria-label="Sign out">
           Sign out
         </button>
       </div>
@@ -222,6 +232,15 @@
           <div class="partner-info">
             <div id="partner-name" class="partner-name">Stranger</div>
             <div id="partner-demographics" class="partner-demographics"></div>
+            <button id="add-friend-btn" class="btn btn-ghost" style="margin-top: 8px; font-size: 11px; padding: 4px 8px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+              Add Friend
+            </button>
           </div>
         </div>
 
@@ -493,7 +512,64 @@
     <img id="fullscreen-image" src="" alt="Fullscreen Profile Photo">
   </div>
 
-  <script src="/js/main.js"></script>
+  <!-- ── Friends Sidebar ────────────────────────────────────────────── -->
+  <div id="friends-sidebar" class="friends-sidebar">
+    <div class="friends-header">
+      <h2 class="friends-title">Friends</h2>
+      <button id="close-friends-btn" class="btn btn-ghost btn-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="friends-tabs">
+      <button class="friend-tab active" data-tab="list">List</button>
+      <button class="friend-tab" data-tab="requests">Requests <span id="friend-req-badge" class="badge" style="display:none">0</span></button>
+    </div>
+    
+    <div id="friends-list-view" class="friends-view active">
+      <!-- Injected by friends.js -->
+    </div>
+    
+    <div id="friends-requests-view" class="friends-view" style="display:none">
+      <!-- Injected by friends.js -->
+    </div>
+  </div>
+
+  <!-- ── Private Messenger Window ───────────────────────────────────── -->
+  <div id="messenger-window" class="messenger-window" style="display:none">
+    <div class="messenger-header">
+      <div class="messenger-user-info">
+        <img id="messenger-avatar" src="" alt="Avatar" class="messenger-avatar">
+        <div class="messenger-details">
+          <div id="messenger-name" class="messenger-name">Name</div>
+          <div id="messenger-status" class="messenger-status">Offline</div>
+        </div>
+      </div>
+      <button id="close-messenger-btn" class="btn btn-ghost btn-icon" style="padding: 4px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div id="messenger-messages" class="messenger-messages">
+      <!-- Injected by friends.js -->
+    </div>
+    <form id="messenger-form" class="messenger-input-area">
+      <input id="messenger-input" type="text" placeholder="Type a message..." autocomplete="off">
+      <button type="submit" class="messenger-send-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </form>
+  </div>
+
+  <script src="/js/friends.js?v=6"></script>
+  <script src="/js/main.js?v=6"></script>
 </body>
 
 </html>
